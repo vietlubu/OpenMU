@@ -186,6 +186,11 @@ public abstract class DataInitializationBase : IDataInitializationPlugIn
             }
         });
 
+        if (this.Key == VersionSeasonSix.DataInitialization.Id)
+        {
+            InstantServerConfiguration.ConfigureBossEvents(this.GameConfiguration);
+        }
+
         this.AddAllUpdateEntries(plugInManager);
 
         await this.Context.SaveChangesAsync().ConfigureAwait(false);

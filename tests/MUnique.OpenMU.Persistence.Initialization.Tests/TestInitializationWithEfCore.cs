@@ -11,6 +11,9 @@ using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
+using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
+using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.Persistence.Initialization.Updates;
 using MUnique.OpenMU.Persistence.InMemory;
@@ -58,6 +61,125 @@ internal class TestInitializationWithEfCore
         await this.AssertIcarusFeatherAndCrestDropGroupsAsync(contextProvider).ConfigureAwait(false);
         await this.AssertCastleSiegeUpdatePlugInAsync(contextProvider).ConfigureAwait(false);
         await this.TestIfItemsFitIntoInventoriesAsync(contextProvider).ConfigureAwait(false);
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    private async Task AssertInstantServerConfigurationAsync(IPersistenceContextProvider contextProvider)
+    {
+        using var context = contextProvider.CreateNewConfigurationContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var servers = (await context.GetAsync<GameServerDefinition>().ConfigureAwait(false)).ToList();
+        var permanentMonsterSpawns = configuration.Maps
+            .SelectMany(map => map.MonsterSpawns)
+            .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
+            .ToList();
+        var monsters = configuration.Monsters.Where(monster => monster.ObjectKind == NpcObjectKind.Monster).ToList();
+        var stores = configuration.Monsters
+            .Where(monster => monster.MerchantStore is not null)
+            .Select(monster => monster.MerchantStore!)
+            .Distinct<ItemStorage>(ReferenceEqualityComparer.Instance)
+            .ToList();
+        var eligibleShopItems = configuration.Items
+            .Where(item => !item.IsQuestItem
+                           && item.Group <= 15
+                           && item.Number is >= 0 and <= byte.MaxValue
+                           && item.Width > 0
+                           && item.Width <= InventoryConstants.RowSize
+                           && item.Height > 0
+                           && item.Height <= InventoryConstants.WarehouseRows)
+            .ToHashSet();
+        var soldItems = stores.SelectMany(store => store.Items).Select(item => item.Definition).OfType<DataModel.Configuration.Items.ItemDefinition>().ToHashSet();
+
+        foreach (var store in stores)
+        {
+            Assert.DoesNotThrow(() => _ = new Storage(InventoryConstants.WarehouseSize, store));
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(configuration.ExperienceRate, Is.EqualTo(9999f));
+            Assert.That(configuration.AreaSkillHitsPlayer, Is.True);
+            Assert.That(configuration.ExcellentItemDropLevelDelta, Is.Zero);
+            Assert.That(configuration.GlobalBaseAttributeValues.Single(attribute => attribute.Definition?.Id == Stats.MoneyAmountRate.Id).Value, Is.EqualTo(1_000f));
+            Assert.That(servers, Is.Not.Empty);
+            Assert.That(servers.All(server => server is { ExperienceRate: 1.0f, PvpEnabled: true }), Is.True);
+            Assert.That(configuration.CharacterClasses.SelectMany(characterClass => characterClass.StatAttributes).Where(attribute => attribute.Attribute == Stats.PointsPerLevelUp).All(attribute => attribute.BaseValue == 500f), Is.True);
+            Assert.That(399 * 500, Is.GreaterThan(5 * 32_767));
+            Assert.That(new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership }.All(stat => configuration.Attributes.Single(attribute => attribute == stat).MaximumValue == 32_767), Is.True);
+            Assert.That(permanentMonsterSpawns, Is.Not.Empty);
+            Assert.That(permanentMonsterSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
+            Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops >= 4 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
+            Assert.That(configuration.MiniGameDefinitions.All(miniGame => miniGame.ArePlayerKillersAllowedToEnter), Is.True);
+            Assert.That(soldItems.Count, Is.GreaterThanOrEqualTo((int)(eligibleShopItems.Count * 0.8)));
+            Assert.That(eligibleShopItems.Where(item => item.Group >= 12 || item.Skill is not null).All(soldItems.Contains), Is.True);
+        });
+
+        this.AssertContinuousBossEvent<GoldenInvasionPlugIn>(configuration, TimeOnly.MinValue);
+        this.AssertContinuousBossEvent<RedDragonInvasionPlugIn>(configuration, new TimeOnly(0, 3));
+        this.AssertContinuousBossEvent<WhiteWizardInvasionPlugIn>(configuration, new TimeOnly(0, 6));
+    }
+
+    private void AssertContinuousBossEvent<TPlugIn>(GameConfiguration configuration, TimeOnly firstStart)
+        where TPlugIn : SimpleInvasionPlugIn
+    {
+        var plugIn = configuration.PlugInConfigurations.Single(item => item.TypeId == typeof(TPlugIn).GUID);
+        var eventConfiguration = plugIn.GetConfiguration<PeriodicInvasionConfiguration>(null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(plugIn.IsActive, Is.True);
+            Assert.That(eventConfiguration, Is.Not.Null);
+            Assert.That(eventConfiguration!.TaskDuration, Is.EqualTo(TimeSpan.FromMinutes(8)));
+            Assert.That(eventConfiguration.Timetable.First(), Is.EqualTo(firstStart));
+            Assert.That(eventConfiguration.Timetable.Zip(eventConfiguration.Timetable.Skip(1), (first, second) => second - first).All(interval => interval == TimeSpan.FromMinutes(10)), Is.True);
+            Assert.That(eventConfiguration.Mobs.All(mob => mob.Count >= 2), Is.True);
+        });
+    }
+
+    /// <summary>
+    /// Tests that the instant-server update repairs an existing Season 6 configuration.
+    /// </summary>
+    [Test]
+    public async Task TestInstantServerUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var server = (await context.GetAsync<GameServerDefinition>().ConfigureAwait(false)).Single();
+            configuration.ExperienceRate = 1f;
+            configuration.AreaSkillHitsPlayer = false;
+            server.PvpEnabled = false;
+            await new ConfigureInstantServerUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the Zen update repairs the multiplier of an existing Season 6 configuration.
+    /// </summary>
+    [Test]
+    public async Task TestIncreaseInstantServerMoneyDropUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var oldRate = configuration.GlobalBaseAttributeValues.Single(attribute => attribute.Definition?.Id == Stats.MoneyAmountRate.Id);
+            configuration.GlobalBaseAttributeValues.Remove(oldRate);
+            configuration.GlobalBaseAttributeValues.Add(context.CreateNew<ConstValueAttribute>(1f, oldRate.Definition));
+            await new IncreaseInstantServerMoneyDropUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        using var verificationContext = contextProvider.CreateNewConfigurationContext();
+        var updatedConfiguration = (await verificationContext.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        Assert.That(updatedConfiguration.GlobalBaseAttributeValues.Single(attribute => attribute.Definition?.Id == Stats.MoneyAmountRate.Id).Value, Is.EqualTo(1_000f));
     }
 
     /// <summary>

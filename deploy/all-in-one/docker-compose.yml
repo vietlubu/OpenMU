@@ -25,6 +25,7 @@ services:
       - "55980:55980"
     environment:
       DB_HOST: database
+      RESOLVE_IP: 127.0.0.1
       ASPNETCORE_URLS: http://+:8080
       # Optional bootstrap admin panel user. Without it, the admin panel is reachable
       # without a login until the first user has been created within the panel itself.

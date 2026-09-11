@@ -3,6 +3,7 @@ services:
     restart: "unless-stopped"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      RESOLVE_IP: public
 
   database:
     restart: "unless-stopped"

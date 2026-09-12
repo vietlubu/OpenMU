@@ -604,4 +604,9 @@ public enum UpdateVersion
     /// The version of the <see cref="RestrictInstantServerDropsUpdatePlugIn"/>.
     /// </summary>
     RestrictInstantServerDrops = 119,
+
+    /// <summary>
+    /// The version of the <see cref="ExpandPotionGirlCraftingStockUpdatePlugIn"/>.
+    /// </summary>
+    ExpandPotionGirlCraftingStock = 120,
 }

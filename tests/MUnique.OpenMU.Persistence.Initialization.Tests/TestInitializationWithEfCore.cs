@@ -148,8 +148,26 @@ internal class TestInitializationWithEfCore
             });
         }
 
-        Assert.That(potionGirlItems.Count(item => item.Definition is { Group: 13, Number: 14 }), Is.EqualTo(2));
-        Assert.That(potionGirlItems.Any(item => item.Definition is { Group: 13, Number: 52 }), Is.True);
+        foreach (var (group, number, level) in new (byte Group, short Number, byte Level)[]
+                 {
+                     (13, 14, 0), (13, 14, 1), (13, 52, 0), (13, 53, 0),
+                     (14, 13, 0), (14, 14, 0), (12, 15, 0), (14, 16, 0), (14, 22, 0),
+                 })
+        {
+            Assert.That(
+                potionGirlItems.Count(item => item.Definition is { } definition && definition.Group == group && definition.Number == number && item.Level == level),
+                Is.EqualTo(1));
+        }
+
+        foreach (var number in new short[] { 30, 31, 136, 137, 141 })
+        {
+            foreach (var level in Enumerable.Range(0, 3).Select(level => (byte)level))
+            {
+                Assert.That(
+                    potionGirlItems.Count(item => item.Definition is { Group: 12 } definition && definition.Number == number && item.Level == level),
+                    Is.EqualTo(1));
+            }
+        }
 
         Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 3 }).Durability, Is.EqualTo(byte.MaxValue));
         Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 6 }).Durability, Is.EqualTo(byte.MaxValue));
@@ -412,6 +430,28 @@ internal class TestInitializationWithEfCore
             configuration.Monsters.First(monster => monster.ObjectKind == NpcObjectKind.Monster).DropItemGroups.Add(randomItems);
             configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0)).Chance = 1.0;
             var update = new RestrictInstantServerDropsUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the Potion Girl crafting-stock update rebuilds her store idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestExpandPotionGirlCraftingStockUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, true).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            configuration.Monsters.Single(monster => monster.Number == 253).MerchantStore!.Items.Clear();
+            var update = new ExpandPotionGirlCraftingStockUpdatePlugIn();
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         }

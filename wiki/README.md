@@ -127,7 +127,8 @@ Riêng **Potion Girl Amy (253)** còn bán:
 
 - Toàn bộ item quest chuyển class: Scroll of Emperor, Ring of Honor, Broken Sword, Dark Stone, Tear of Elf, Soul Shard of Wizard, Flame of Death Beam Knight, Horn of Hell Maine, Feather of Dark Phoenix và Eye of Abyssal.
 - Chaos Dragon Axe, Chaos Nature Bow và Chaos Lightning Staff **+4 +4 option** để đưa thẳng vào công thức tạo cánh cấp 1.
-- Loch's Feather thường, Loch's Feather +1 (Monarch's Crest) và Flame of Condor cho các công thức cánh/cape cao hơn.
+- Jewel of Bless, Soul, Chaos, Life và Creation dạng viên lẻ; đồng thời có Packed Jewel tương ứng loại 10, 20 và 30 viên.
+- Loch's Feather thường, Loch's Feather +1 (Monarch's Crest), Flame of Condor và Feather of Condor cho các công thức cánh/cape cao hơn.
 
 Các NPC áp dụng gồm Potion Girl Amy, Oracle Layla, Pamela, Angela, Silvia, Christine và Leina. Các shop barmaid, vé event và NPC crafting khác vẫn giữ nội dung Season 6 gốc.
 

@@ -297,17 +297,26 @@ internal static class InstantServerConfiguration
                 [(0, 5), (0, 6), (4, 0), (4, 3), (5, 0), (2, 8), (2, 9), (0, 32), (0, 33)]);
         });
 
-        foreach (var npcNumber in GeneralGoodsMerchantNumbers)
+        foreach (var npcNumber in GeneralGoodsMerchantNumbers.Where(number => number != 253))
         {
-            ConfigureSpecialistStore(context, gameConfiguration, npcNumber, packer =>
-            {
-                AddGeneralGoods(context, gameConfiguration, packer);
-                if (npcNumber == 253)
-                {
-                    AddClassChangeAndWingItems(context, gameConfiguration, packer);
-                }
-            });
+            ConfigureSpecialistStore(context, gameConfiguration, npcNumber, packer => AddGeneralGoods(context, gameConfiguration, packer));
         }
+
+        ConfigurePotionGirlStore(context, gameConfiguration);
+    }
+
+    /// <summary>
+    /// Rebuilds Potion Girl Amy's store with the instant-server utility and crafting stock.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigurePotionGirlStore(IContext context, GameConfiguration gameConfiguration)
+    {
+        ConfigureSpecialistStore(context, gameConfiguration, 253, packer =>
+        {
+            AddGeneralGoods(context, gameConfiguration, packer);
+            AddClassChangeAndWingItems(context, gameConfiguration, packer);
+        });
     }
 
     private static void ConfigureSpecialistStore(IContext context, GameConfiguration gameConfiguration, short npcNumber, Action<MerchantStorePacker> populate)
@@ -447,6 +456,29 @@ internal static class InstantServerConfiguration
         packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 14)));
         packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 14), level: 1));
         packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 52)));
+
+        foreach (var (group, number) in new (byte Group, short Number)[]
+                 {
+                     (14, 13), // Jewel of Bless
+                     (14, 14), // Jewel of Soul
+                     (12, 15), // Jewel of Chaos
+                     (14, 16), // Jewel of Life
+                     (14, 22), // Jewel of Creation
+                 })
+        {
+            packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, group, number)));
+        }
+
+        foreach (var number in new short[] { 30, 31, 136, 137, 141 })
+        {
+            var definition = GetItemDefinition(gameConfiguration, 12, number);
+            for (byte level = 0; level <= definition.MaximumItemLevel; level++)
+            {
+                packer.Add(CreateStoreItem(context, definition, level: level));
+            }
+        }
+
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 53)));
     }
 
     private static Item CreateStoreItem(IContext context, ItemDefinition definition, double durability = 1, byte level = 0)

@@ -51,6 +51,12 @@ public enum SpecialItemType
     /// An excellent item with every supported excellent option.
     /// </summary>
     FullExcellent,
+
+    /// <summary>
+    /// An excellent item which always has Luck.
+    /// </summary>
+    ExcellentWithLuck,
+
 }
 
 /// <summary>

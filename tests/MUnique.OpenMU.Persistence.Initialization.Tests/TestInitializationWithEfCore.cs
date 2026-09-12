@@ -133,7 +133,7 @@ internal class TestInitializationWithEfCore
         {
             Assert.That(kundunBox.DropItems.Where(group => group.SourceItemLevel == level), Has.Exactly(1).Items);
             Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level), Has.Property(nameof(DropItemGroup.Chance)).EqualTo(1.0));
-            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level).ItemType, Is.EqualTo(SpecialItemType.Excellent));
+            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level).ItemType, Is.EqualTo(SpecialItemType.ExcellentWithLuck));
         }
 
         var jackpot = configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems.Single();
@@ -189,7 +189,8 @@ internal class TestInitializationWithEfCore
             {
                 Assert.That(item!.Level, Is.EqualTo(7));
                 Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
-                Assert.That(item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck || link.ItemOption?.OptionType == ItemOptionTypes.Option), Is.False);
+                Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
+                Assert.That(item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Option), Is.False);
                 Assert.That(item.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent).ItemOption?.PowerUpDefinition?.TargetAttribute, Is.EqualTo(definition.Group >= 7 ? Stats.MaximumHealth : Stats.ExcellentDamageChance));
                 Assert.That(item.HasSkill, Is.EqualTo(item.CanHaveSkill()));
             });
@@ -330,6 +331,41 @@ internal class TestInitializationWithEfCore
         using var verificationContext = contextProvider.CreateNewConfigurationContext();
         var updatedConfiguration = (await verificationContext.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
         Assert.That(updatedConfiguration.GlobalBaseAttributeValues.Single(attribute => attribute.Definition?.Id == Stats.MoneyAmountRate.Id).Value, Is.EqualTo(1_000f));
+    }
+
+    /// <summary>
+    /// Tests that the Luck update repairs existing instant-server shops and Box of Kundun groups.
+    /// </summary>
+    [Test]
+    public async Task TestAddInstantServerLuckUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var shopItem = configuration.Monsters
+                .SelectMany(monster => monster.MerchantStore?.Items ?? [])
+                .First(item => item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck));
+            foreach (var luck in shopItem.ItemOptions.Where(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck).ToList())
+            {
+                shopItem.ItemOptions.Remove(luck);
+            }
+
+            var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+            foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
+            {
+                group.ItemType = SpecialItemType.Excellent;
+            }
+
+            var update = new AddInstantServerLuckUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
     }
 
     /// <summary>

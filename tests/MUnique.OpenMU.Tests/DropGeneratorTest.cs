@@ -165,6 +165,8 @@ public class DropGeneratorTest
             Assert.That(jackpot.HasSkill, Is.EqualTo(jackpot.CanHaveSkill()));
             Assert.That(jackpot.Durability, Is.EqualTo(jackpot.GetMaximumDurabilityOfOnePiece()));
             Assert.That(ordinaryExcellent!.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
+            Assert.That(ordinaryExcellent.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
+
         });
 
         var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);

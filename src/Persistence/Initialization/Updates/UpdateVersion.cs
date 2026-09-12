@@ -594,4 +594,10 @@ public enum UpdateVersion
     /// The version of the <see cref="CompleteInstantServerUpdatePlugIn"/>.
     /// </summary>
     CompleteInstantServer = 117,
+
+    /// <summary>
+    /// The version of the <see cref="AddInstantServerLuckUpdatePlugIn"/>.
+    /// </summary>
+    AddInstantServerLuck = 118,
+
 }

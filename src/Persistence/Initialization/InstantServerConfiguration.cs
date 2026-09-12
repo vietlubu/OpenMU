@@ -83,6 +83,7 @@ internal static class InstantServerConfiguration
         ConfigurePotionStacks(gameConfiguration);
         ConfigureMerchantStores(context, gameConfiguration);
         ConfigureGacha(context, gameConfiguration);
+        ConfigureGuaranteedLuck(context, gameConfiguration);
     }
 
     /// <summary>
@@ -387,7 +388,7 @@ internal static class InstantServerConfiguration
         var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
         foreach (var level in Enumerable.Range(8, 5).Select(level => (byte)level))
         {
-            var excellentGroup = kundunBox.DropItems.Single(group => group.SourceItemLevel == level && group.ItemType == SpecialItemType.Excellent);
+            var excellentGroup = kundunBox.DropItems.Single(group => group.SourceItemLevel == level && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck);
             excellentGroup.Chance = 1.0;
             foreach (var obsolete in kundunBox.DropItems.Where(group => group.SourceItemLevel == level && group != excellentGroup).ToList())
             {
@@ -466,9 +467,38 @@ internal static class InstantServerConfiguration
         jackpot.Description = "Full Option Gacha Box (GM Gift)";
         jackpot.DropEffect = ItemDropEffect.FanfareSound;
         jackpot.PossibleItems.Clear();
-        foreach (var item in kundunBox.DropItems.Single(group => group.SourceItemLevel == 12 && group.ItemType == SpecialItemType.Excellent).PossibleItems)
+        foreach (var item in kundunBox.DropItems.Single(group => group.SourceItemLevel == 12 && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck).PossibleItems)
         {
             jackpot.PossibleItems.Add(item);
+        }
+    }
+
+    /// <summary>
+    /// Guarantees Luck on instant-server shop equipment and Box of Kundun rewards.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureGuaranteedLuck(IContext context, GameConfiguration gameConfiguration)
+    {
+        foreach (var item in gameConfiguration.Monsters
+                     .Where(monster => RebuiltMerchantNumbers.Contains(monster.Number))
+                     .SelectMany(monster => monster.MerchantStore?.Items ?? []))
+        {
+            var luck = item.Definition?.PossibleItemOptions
+                .SelectMany(definition => definition.PossibleOptions)
+                .FirstOrDefault(option => option.OptionType == ItemOptionTypes.Luck);
+            if (luck is not null && item.ItemOptions.All(link => link.ItemOption != luck))
+            {
+                var link = context.CreateNew<ItemOptionLink>();
+                link.ItemOption = luck;
+                item.ItemOptions.Add(link);
+            }
+        }
+
+        var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
+        foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
+        {
+            group.ItemType = SpecialItemType.ExcellentWithLuck;
         }
     }
 

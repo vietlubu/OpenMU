@@ -217,6 +217,33 @@ public class DefaultDropGenerator : IDropGenerator
         return item;
     }
 
+    private Item? GenerateRandomExcellentItemWithLuck(int monsterLevel = 0, ICollection<ItemDefinition>? possibleItems = null)
+    {
+        if (monsterLevel < this._excellentItemDropLevelDelta && possibleItems is null)
+        {
+            return null;
+        }
+
+        var possible = (possibleItems ?? this.GetPossibleList(monsterLevel - this._excellentItemDropLevelDelta) ?? [])
+            .Where(definition => definition.PossibleItemOptions
+                .SelectMany(option => option.PossibleOptions)
+                .Any(option => option.OptionType == ItemOptionTypes.Luck))
+            .ToList();
+        var item = this.GenerateRandomExcellentItem(monsterLevel, possible);
+        if (item is not null)
+        {
+            var luck = item.Definition!.PossibleItemOptions
+                .SelectMany(definition => definition.PossibleOptions)
+                .First(option => option.OptionType == ItemOptionTypes.Luck);
+            if (item.ItemOptions.All(link => link.ItemOption != luck))
+            {
+                item.ItemOptions.Add(new ItemOptionLink { ItemOption = luck });
+            }
+        }
+
+        return item;
+    }
+
     private static byte GetItemLevelByMonsterLevel(ItemDefinition itemDefinition, int monsterLevel)
     {
         return Math.Min((byte)((monsterLevel - itemDefinition.DropLevel) / 3), itemDefinition.MaximumItemLevel);
@@ -359,6 +386,7 @@ public class DefaultDropGenerator : IDropGenerator
         {
             SpecialItemType.Ancient => this.GenerateRandomAncient(),
             SpecialItemType.Excellent => this.GenerateRandomExcellentItem(possibleItems: possibleItems),
+            SpecialItemType.ExcellentWithLuck => this.GenerateRandomExcellentItemWithLuck(possibleItems: possibleItems),
             SpecialItemType.FullExcellent => this.GenerateFullExcellentItem(possibleItems: possibleItems),
             _ => this.GenerateRandomItem(possibleItems),
         };
@@ -605,6 +633,7 @@ public class DefaultDropGenerator : IDropGenerator
         {
             SpecialItemType.Ancient => this.GenerateRandomAncient(),
             SpecialItemType.Excellent => this.GenerateRandomExcellentItem(monsterLevel),
+            SpecialItemType.ExcellentWithLuck => this.GenerateRandomExcellentItemWithLuck(monsterLevel),
             SpecialItemType.FullExcellent => this.GenerateFullExcellentItem(monsterLevel),
             SpecialItemType.RandomItem => this.GenerateRandomItem(monsterLevel, false),
             SpecialItemType.SocketItem => this.GenerateRandomItem(monsterLevel, true),

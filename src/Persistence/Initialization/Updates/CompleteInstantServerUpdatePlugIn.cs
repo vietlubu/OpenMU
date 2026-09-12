@@ -58,7 +58,7 @@ public sealed class CompleteInstantServerUpdatePlugIn : UpdatePlugInBase
             .ToList();
         var kundunBox = gameConfiguration.Items.First(item => item.Group == 14 && item.Number == 11);
         var detachedBoxGroups = kundunBox.DropItems
-            .Where(group => group.SourceItemLevel is >= 8 and <= 12 && group.ItemType != SpecialItemType.Excellent)
+            .Where(group => group.SourceItemLevel is >= 8 and <= 12 && group.ItemType is not (SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck))
             .ToList();
         var detachedLegacyGroups = gameConfiguration.DropItemGroups
             .Where(group => group.Monster is not null

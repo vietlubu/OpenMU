@@ -32,6 +32,7 @@ using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.Persistence.EntityFramework.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework.Json;
 using MUnique.OpenMU.Persistence.Initialization.Version075;
+using MUnique.OpenMU.Persistence.Initialization.Updates;
 using MUnique.OpenMU.Persistence.InMemory;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Web.AdminPanel;
@@ -47,6 +48,7 @@ using Serilog.Debugging;
 /// </summary>
 internal sealed class Program : IDisposable
 {
+    private const string ApplyMandatoryUpdatesArgument = "-applymandatoryupdates";
     private static bool _confirmExit;
     private static SystemConfiguration? _systemConfiguration;
 
@@ -89,7 +91,7 @@ internal sealed class Program : IDisposable
     /// <param name="args">The command line args.</param>
     public static async Task Main(string[] args)
     {
-        using var exitCts = new CancellationTokenSource();
+        var exitCts = new CancellationTokenSource();
         var exitToken = exitCts.Token;
 
         void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
@@ -124,6 +126,11 @@ internal sealed class Program : IDisposable
 
         using var program = new Program();
         await program.InitializeAsync(args).ConfigureAwait(false);
+        if (args.Contains(ApplyMandatoryUpdatesArgument))
+        {
+            return;
+        }
+
         while (!exitToken.IsCancellationRequested)
         {
             await Task.Delay(100).ConfigureAwait(false);
@@ -146,6 +153,17 @@ internal sealed class Program : IDisposable
 
         this._logger.Information("Creating host...");
         this._serverHost = await this.CreateHostAsync(args).ConfigureAwait(false);
+        if (args.Contains(ApplyMandatoryUpdatesArgument))
+        {
+            using var scope = this._serverHost.Services.CreateScope();
+            var updateService = scope.ServiceProvider.GetRequiredService<DataUpdateService>();
+            var updates = (await updateService.DetermineAvailableUpdatesAsync().ConfigureAwait(false))
+                .Where(update => update.IsMandatory)
+                .ToList();
+            await updateService.ApplyUpdatesAsync(updates, new Progress<(UpdateVersion, bool)>()).ConfigureAwait(false);
+            Console.WriteLine($"Applied {updates.Count} mandatory configuration update(s).");
+            return;
+        }
 
         var autoStart = _systemConfiguration?.AutoStart is true
                         || args.Contains("-autostart")
@@ -341,6 +359,11 @@ internal sealed class Program : IDisposable
         if (addAdminPanel)
         {
             host.ConfigureAdminPanel();
+        }
+
+        if (args.Contains(ApplyMandatoryUpdatesArgument))
+        {
+            return host;
         }
 
         this._logger.Information("Starting host...");

@@ -29,18 +29,28 @@ if [ "$previous_head" != "$(git rev-parse HEAD)" ]; then
     exec "$0" "$branch"
 fi
 
+compose() {
+    sudo -n docker compose \
+        -p openmu \
+        --project-directory "$compose_dir" \
+        --env-file "$lan_config_dir/admin.env" \
+        -f "$compose_dir/docker-compose.yml" \
+        -f "$lan_config_dir/docker-compose.lan.yml" \
+        "$@"
+}
+
 sudo -n docker build \
     -t munique/openmu:latest \
     -f "$repo_root/src/Startup/Dockerfile" \
     "$repo_root/src"
 
-sudo -n docker compose \
-    -p openmu \
-    --project-directory "$compose_dir" \
-    --env-file "$lan_config_dir/admin.env" \
-    -f "$compose_dir/docker-compose.yml" \
-    -f "$lan_config_dir/docker-compose.lan.yml" \
-    up -d --no-deps --force-recreate openmu-startup
+compose stop openmu-startup
+if ! compose run --rm --no-deps openmu-startup -applymandatoryupdates; then
+    compose up -d --no-deps openmu-startup
+    exit 1
+fi
+
+compose up -d --no-deps --force-recreate openmu-startup
 
 elapsed=0
 until sudo -n docker logs openmu-startup 2>&1 | grep -q "Host started"; do
@@ -58,8 +68,7 @@ installed_data_version=$(sudo -n docker exec database psql -U postgres -d openmu
     "select \"CurrentInstalledVersion\" from config.\"ConfigurationUpdateState\" where \"InitializationKey\" = 'season6';")
 
 if [ "${installed_data_version:-0}" -lt "$expected_data_version" ]; then
-    echo "Database update required: installed=$installed_data_version expected=$expected_data_version" >&2
-    echo "Apply mandatory updates in the Admin Panel, then run this script again." >&2
+    echo "Database update failed: installed=$installed_data_version expected=$expected_data_version" >&2
     exit 2
 fi
 

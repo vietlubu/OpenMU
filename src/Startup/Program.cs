@@ -31,8 +31,8 @@ using MUnique.OpenMU.Persistence.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.Persistence.EntityFramework.AdminAuth;
 using MUnique.OpenMU.Persistence.EntityFramework.Json;
-using MUnique.OpenMU.Persistence.Initialization.Version075;
 using MUnique.OpenMU.Persistence.Initialization.Updates;
+using MUnique.OpenMU.Persistence.Initialization.Version075;
 using MUnique.OpenMU.Persistence.InMemory;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Web.AdminPanel;
@@ -517,7 +517,7 @@ internal sealed class Program : IDisposable
         }
         else
         {
-            contextProvider = await this.PrepareRepositoryProviderAsync(args.Contains("-reinit"), version, loggerFactory, changeListener).ConfigureAwait(false);
+            contextProvider = await this.PrepareRepositoryProviderAsync(args.Contains("-reinit"), version, loggerFactory, args.Contains(ApplyMandatoryUpdatesArgument) ? null : changeListener).ConfigureAwait(false);
         }
 
         await this.ReadSystemConfigurationAsync(contextProvider).ConfigureAwait(false);
@@ -525,7 +525,7 @@ internal sealed class Program : IDisposable
         return contextProvider;
     }
 
-    private async Task<IMigratableDatabaseContextProvider> PrepareRepositoryProviderAsync(bool reinit, string version, ILoggerFactory loggerFactory, IConfigurationChangeListener changeListener)
+    private async Task<IMigratableDatabaseContextProvider> PrepareRepositoryProviderAsync(bool reinit, string version, ILoggerFactory loggerFactory, IConfigurationChangeListener? changeListener)
     {
         var contextProvider = new PersistenceContextProvider(loggerFactory, changeListener);
         if (reinit || !await contextProvider.DatabaseExistsAsync().ConfigureAwait(false))

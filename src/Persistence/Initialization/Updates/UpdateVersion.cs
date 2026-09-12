@@ -600,4 +600,8 @@ public enum UpdateVersion
     /// </summary>
     AddInstantServerLuck = 118,
 
+    /// <summary>
+    /// The version of the <see cref="RestrictInstantServerDropsUpdatePlugIn"/>.
+    /// </summary>
+    RestrictInstantServerDrops = 119,
 }

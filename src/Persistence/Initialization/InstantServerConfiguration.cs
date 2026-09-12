@@ -42,6 +42,11 @@ internal static class InstantServerConfiguration
     internal const float MoneyAmountRate = 1_000f;
 
     /// <summary>
+    /// Gets the regular-monster jewel drop chance.
+    /// </summary>
+    internal const double JewelDropChance = 0.01;
+
+    /// <summary>
     /// Gets the regular monster respawn delay.
     /// </summary>
     internal static readonly TimeSpan MonsterRespawnDelay = TimeSpan.FromSeconds(5);
@@ -143,6 +148,35 @@ internal static class InstantServerConfiguration
         }
     }
 
+    /// <summary>
+    /// Guarantees Luck on instant-server shop equipment and Box of Kundun rewards.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureGuaranteedLuck(IContext context, GameConfiguration gameConfiguration)
+    {
+        foreach (var item in gameConfiguration.Monsters
+                     .Where(monster => RebuiltMerchantNumbers.Contains(monster.Number))
+                     .SelectMany(monster => monster.MerchantStore?.Items ?? []))
+        {
+            var luck = item.Definition?.PossibleItemOptions
+                .SelectMany(definition => definition.PossibleOptions)
+                .FirstOrDefault(option => option.OptionType == ItemOptionTypes.Luck);
+            if (luck is not null && item.ItemOptions.All(link => link.ItemOption != luck))
+            {
+                var link = context.CreateNew<ItemOptionLink>();
+                link.ItemOption = luck;
+                item.ItemOptions.Add(link);
+            }
+        }
+
+        var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
+        foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
+        {
+            group.ItemType = SpecialItemType.ExcellentWithLuck;
+        }
+    }
+
     private static void ConfigureBossEvent<TPlugIn>(GameConfiguration gameConfiguration, TimeSpan offset)
         where TPlugIn : SimpleInvasionPlugIn, new()
     {
@@ -165,22 +199,29 @@ internal static class InstantServerConfiguration
 
     private static void ConfigureDropRates(GameConfiguration gameConfiguration)
     {
-        var defaultDropGroups = new HashSet<Guid>
-        {
-            GuidHelper.CreateGuid<DropItemGroup>(1),
-            GuidHelper.CreateGuid<DropItemGroup>(2),
-            GuidHelper.CreateGuid<DropItemGroup>(3),
-            GuidHelper.CreateGuid<DropItemGroup>(4),
-        };
+        var moneyGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == GuidHelper.CreateGuid<DropItemGroup>(1));
+        var jewelGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == GuidHelper.CreateGuid<DropItemGroup>(4));
+        moneyGroup.Chance = 1.0;
+        jewelGroup.Chance = JewelDropChance;
 
-        foreach (var dropGroup in gameConfiguration.DropItemGroups.Where(group => defaultDropGroups.Contains(group.GetId())))
+        foreach (var map in gameConfiguration.Maps)
         {
-            dropGroup.Chance = 1.0;
+            map.DropItemGroups.Clear();
+            map.DropItemGroups.Add(moneyGroup);
+        }
+
+        foreach (var requiredItem in gameConfiguration.Monsters
+                     .SelectMany(monster => monster.Quests)
+                     .SelectMany(quest => quest.RequiredItems)
+                     .Where(requiredItem => requiredItem.Item?.IsQuestItem == true))
+        {
+            requiredItem.DropItemGroup = null;
         }
 
         foreach (var monster in gameConfiguration.Monsters.Where(monster => monster.ObjectKind == NpcObjectKind.Monster))
         {
-            monster.NumberOfMaximumItemDrops = Math.Max(4, monster.NumberOfMaximumItemDrops);
+            monster.DropItemGroups.Clear();
+            monster.NumberOfMaximumItemDrops = 2;
             monster.RespawnDelay = MonsterRespawnDelay;
         }
     }
@@ -258,7 +299,14 @@ internal static class InstantServerConfiguration
 
         foreach (var npcNumber in GeneralGoodsMerchantNumbers)
         {
-            ConfigureSpecialistStore(context, gameConfiguration, npcNumber, packer => AddGeneralGoods(context, gameConfiguration, packer));
+            ConfigureSpecialistStore(context, gameConfiguration, npcNumber, packer =>
+            {
+                AddGeneralGoods(context, gameConfiguration, packer);
+                if (npcNumber == 253)
+                {
+                    AddClassChangeAndWingItems(context, gameConfiguration, packer);
+                }
+            });
         }
     }
 
@@ -374,6 +422,33 @@ internal static class InstantServerConfiguration
         packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 29)));
     }
 
+    private static void AddClassChangeAndWingItems(IContext context, GameConfiguration gameConfiguration, MerchantStorePacker packer)
+    {
+        foreach (var (number, level) in new (byte Number, byte Level)[]
+                 {
+                     (23, 0), (23, 1), (24, 0), (24, 1), (25, 0), (26, 0), (65, 0), (66, 0), (67, 0), (68, 0),
+                 })
+        {
+            packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 14, number), level: level));
+        }
+
+        var itemHelper = new ItemHelper(context, gameConfiguration);
+        foreach (var (group, number) in new (ItemGroups Group, byte Number)[]
+                 {
+                     (ItemGroups.Scepters, 6), (ItemGroups.Bows, 6), (ItemGroups.Staff, 7),
+                 })
+        {
+            var definition = GetItemDefinition(gameConfiguration, (byte)group, number);
+            var item = itemHelper.CreateWeapon(0, group, number, 4, 1, true, definition.Skill is not null, null);
+            item.Durability = item.GetMaximumDurabilityOfOnePiece();
+            packer.Add(item);
+        }
+
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 14)));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 14), level: 1));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 52)));
+    }
+
     private static Item CreateStoreItem(IContext context, ItemDefinition definition, double durability = 1, byte level = 0)
     {
         var item = context.CreateNew<Item>();
@@ -406,6 +481,8 @@ internal static class InstantServerConfiguration
         var kundunFive = UpsertGachaGroup(context, gameConfiguration, 5, "Kundun +5 Boss Gacha", 0.475, kundunBox, 12);
         var jackpotBox = GetItemDefinition(gameConfiguration, 14, 52);
         var jackpot = UpsertGachaGroup(context, gameConfiguration, 6, "Full Option GM Gift Boss Gacha", 0.05, jackpotBox, 0);
+        var jewelGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == GuidHelper.CreateGuid<DropItemGroup>(4));
+
         var configuredGroups = new[] { kundunOne, kundunTwo, kundunThree, kundunFour, kundunFive, jackpot };
 
         foreach (var monster in gameConfiguration.Monsters)
@@ -436,7 +513,7 @@ internal static class InstantServerConfiguration
 
         foreach (var monster in regularMonsters)
         {
-            AttachGroups(monster, kundunOne, kundunTwo, kundunThree);
+            AttachGroups(monster, jewelGroup, kundunOne, kundunTwo, kundunThree);
             ReserveChanceDropSlot(monster);
         }
 
@@ -470,35 +547,6 @@ internal static class InstantServerConfiguration
         foreach (var item in kundunBox.DropItems.Single(group => group.SourceItemLevel == 12 && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck).PossibleItems)
         {
             jackpot.PossibleItems.Add(item);
-        }
-    }
-
-    /// <summary>
-    /// Guarantees Luck on instant-server shop equipment and Box of Kundun rewards.
-    /// </summary>
-    /// <param name="context">The persistence context.</param>
-    /// <param name="gameConfiguration">The game configuration.</param>
-    internal static void ConfigureGuaranteedLuck(IContext context, GameConfiguration gameConfiguration)
-    {
-        foreach (var item in gameConfiguration.Monsters
-                     .Where(monster => RebuiltMerchantNumbers.Contains(monster.Number))
-                     .SelectMany(monster => monster.MerchantStore?.Items ?? []))
-        {
-            var luck = item.Definition?.PossibleItemOptions
-                .SelectMany(definition => definition.PossibleOptions)
-                .FirstOrDefault(option => option.OptionType == ItemOptionTypes.Luck);
-            if (luck is not null && item.ItemOptions.All(link => link.ItemOption != luck))
-            {
-                var link = context.CreateNew<ItemOptionLink>();
-                link.ItemOption = luck;
-                item.ItemOptions.Add(link);
-            }
-        }
-
-        var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
-        foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
-        {
-            group.ItemType = SpecialItemType.ExcellentWithLuck;
         }
     }
 
@@ -560,8 +608,7 @@ internal static class InstantServerConfiguration
 
     private static void ReserveChanceDropSlot(MonsterDefinition monster)
     {
-        var guaranteedMonsterDrops = monster.DropItemGroups.Count(group => group.Chance >= 1.0);
-        monster.NumberOfMaximumItemDrops = Math.Max(monster.NumberOfMaximumItemDrops, 5 + guaranteedMonsterDrops);
+        monster.NumberOfMaximumItemDrops = 2;
     }
 
     private static ItemDefinition GetItemDefinition(GameConfiguration gameConfiguration, int group, int number)

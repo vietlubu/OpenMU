@@ -43,10 +43,11 @@ Một số bộ client có thể được cấu hình dùng cổng `44406`. Nế
 3. Mua bộ giáp và vũ khí Excellent +7 khởi đầu.
 4. Mua đầy đủ sách, ngọc hoặc orb học skill có thể sử dụng.
 5. Mua Large Healing Potion và Large Mana Potion; mỗi bình có thể chứa tối đa 255 lần dùng.
-6. Lập party rồi luyện tại các spot đông quái cho tới level 400.
+6. Lập party rồi luyện tại các spot đông quái cho tới level 400; quái luôn cho Zen và chỉ quay thêm ngọc hoặc box, không rơi trang bị trực tiếp.
 7. Nhặt Box of Kundun +1 đến +3 từ quái thường để nâng dần trang bị.
-8. Theo thông báo invasion, tập trung cả nhóm săn boss để lấy Box +4, +5 hoặc GM Gift Full Option.
-9. Sau khi hoàn thiện build, thử đấu PvP hoặc đổi cách phân bổ stat.
+8. Mua item change class tại Potion Girl Amy khi cần làm quest chuyển class.
+9. Theo thông báo invasion, tập trung cả nhóm săn boss để lấy Box +4, +5 hoặc GM Gift Full Option.
+10. Sau khi hoàn thiện build, thử đấu PvP hoặc đổi cách phân bổ stat.
 
 ## 4. Shop trang bị và skill
 
@@ -122,31 +123,38 @@ Các NPC general-goods ở nhiều thành đều bán:
 - Town Portal Scroll.
 - Armor of Guardsman.
 
+Riêng **Potion Girl Amy (253)** còn bán:
+
+- Toàn bộ item quest chuyển class: Scroll of Emperor, Ring of Honor, Broken Sword, Dark Stone, Tear of Elf, Soul Shard of Wizard, Flame of Death Beam Knight, Horn of Hell Maine, Feather of Dark Phoenix và Eye of Abyssal.
+- Chaos Dragon Axe, Chaos Nature Bow và Chaos Lightning Staff **+4 +4 option** để đưa thẳng vào công thức tạo cánh cấp 1.
+- Loch's Feather thường, Loch's Feather +1 (Monarch's Crest) và Flame of Condor cho các công thức cánh/cape cao hơn.
+
 Các NPC áp dụng gồm Potion Girl Amy, Oracle Layla, Pamela, Angela, Silvia, Christine và Leina. Các shop barmaid, vé event và NPC crafting khác vẫn giữ nội dung Season 6 gốc.
 
 ## 6. Trang bị Excellent trong shop
 
 Đồ shop là bộ khởi đầu, không phải đồ cuối game:
 
-- Tất cả giáp khởi đầu đều **+7** và có đúng một excellent option tăng khả năng phòng thủ/sinh tồn.
-- Vũ khí khởi đầu đều **+7**, có skill nếu loại vũ khí đó hỗ trợ và có một excellent option tấn công.
-- Đồ shop không có Luck và không có normal option +16.
-- Muốn đồ nhiều excellent options, Luck và +16, người chơi phải săn box — đặc biệt là GM Gift.
+- Tất cả giáp khởi đầu đều **+7**, có Luck và đúng một excellent option tăng khả năng phòng thủ/sinh tồn.
+- Vũ khí khởi đầu đều **+7**, có Luck, có skill nếu loại vũ khí đó hỗ trợ và có một excellent option tấn công.
+- Đồ shop khởi đầu không có normal option +16.
+- Muốn đồ nhiều excellent options và +16, người chơi vẫn phải săn box — đặc biệt là GM Gift.
 
 ## 7. Box of Kundun rơi ở đâu?
 
 ### Quái thường
 
-Mỗi quái thường tại spot có một lượt quay box:
+Quái thường không còn rơi giáp, vũ khí, đồ Excellent ngẫu nhiên, item quest hoặc nguyên liệu map. Mỗi lần chết luôn trả Zen, sau đó có đúng một lượt quay phần thưởng phụ:
 
-| Box | Tỷ lệ mỗi quái |
+| Phần thưởng | Tỷ lệ mỗi quái |
 | --- | ---: |
+| Ngọc ngẫu nhiên | 1% |
 | Box of Kundun +1 | 2% |
 | Box of Kundun +2 | 1,5% |
 | Box of Kundun +3 | 1% |
-| Không có box | 95,5% |
+| Không có phần thưởng phụ | 94,5% |
 
-Tổng tỷ lệ nhận box là **4,5% mỗi quái**. Quái thường không nhận các box boss +4, +5 hoặc GM Gift từ lượt quay này.
+Ngọc và box dùng chung một lượt quay nên một quái không đồng thời rơi cả ngọc lẫn box. Trang bị mới đến từ shop hoặc từ lúc mở Box of Kundun/GM Gift.
 
 ### Boss
 
@@ -162,7 +170,7 @@ Các boss áp dụng gồm nhóm Golden Monster, Red Dragon, White Wizard, Illus
 
 ## 8. Mỗi loại box mở ra gì?
 
-Tất cả Box of Kundun +1 đến +5 hiện mở ra **một item Excellent với xác suất 100%**. Không còn trường hợp box Kundun mở ra Zen.
+Tất cả Box of Kundun +1 đến +5 hiện mở ra **một item Excellent có Luck với xác suất 100%**. Không còn trường hợp box Kundun mở ra Zen.
 
 | Box | Nhóm phần thưởng điển hình |
 | --- | --- |
@@ -174,7 +182,7 @@ Tất cả Box of Kundun +1 đến +5 hiện mở ra **một item Excellent vớ
 
 Khi box chọn một set, phần thưởng là **một mảnh ngẫu nhiên của set**, không phải nguyên bộ.
 
-Excellent options của Kundun +1 đến +5 vẫn được tạo ngẫu nhiên. Chúng không bảo đảm full option.
+Excellent options của Kundun +1 đến +5 vẫn được tạo ngẫu nhiên, nhưng Luck luôn có nếu loại trang bị hỗ trợ. Chúng không bảo đảm full option.
 
 ## 9. GM Gift Full Option
 
@@ -189,7 +197,7 @@ Khi mở, người chơi nhận một trang bị thuộc pool top-tier của Kun
 - Normal option +16 nếu item hỗ trợ.
 - Durability tối đa.
 
-Chỉ GM Gift bảo đảm hợp đồng Full Option này. Box Kundun thông thường chỉ bảo đảm item Excellent.
+Chỉ GM Gift bảo đảm hợp đồng Full Option này. Box Kundun thông thường bảo đảm item Excellent và Luck, nhưng số excellent option vẫn ngẫu nhiên.
 
 ## 10. Lịch invasion boss
 
@@ -216,12 +224,13 @@ Sau phút 30, chu kỳ bắt đầu lại. Mỗi event kéo dài 10 phút và kh
 
 ### Vòng chơi ngắn
 
-1. Luyện level và lấy Zen.
-2. Mua đồ Excellent +7 cùng toàn bộ skill cần thiết.
-3. Farm quái thường để lấy Kundun +1/+2/+3.
-4. Gom nhóm theo chu kỳ invasion 10 phút.
-5. Săn Kundun +4/+5 và jackpot GM Gift.
-6. So sánh build bằng duel hoặc PvP.
+1. Luyện level, nhặt Zen và ngọc.
+2. Mua đồ Excellent +7 có Luck cùng toàn bộ skill cần thiết.
+3. Mua item change class hoặc trang bị tạo cánh tại Potion Girl Amy khi cần.
+4. Farm quái thường để lấy Kundun +1/+2/+3; quái không rơi trang bị trực tiếp.
+5. Gom nhóm theo chu kỳ invasion 10 phút.
+6. Săn Kundun +4/+5 và jackpot GM Gift.
+7. So sánh build bằng duel hoặc PvP.
 
 ### Phân phối đồ trong party
 
@@ -246,13 +255,17 @@ Server dành cho nhóm nhỏ nên chia đồ hợp lý sẽ giúp cả nhóm đ�
 
 Cấu hình hiện tại là 500 point mỗi level, hoặc 501 sau Hero Status. Hãy thoát hẳn nhân vật và đăng nhập lại để nạp cấu hình mới. Nếu vẫn nhận 5 point, báo tên nhân vật cho quản trị viên kiểm tra thuộc tính đã lưu.
 
+### Vì sao quái không rơi trang bị hoặc item quest?
+
+Đây là thiết kế mới của server. Quái chỉ trả Zen và quay thêm ngọc hoặc Box of Kundun. Trang bị lấy từ shop hoặc mở box; item change class mua tại Potion Girl Amy.
+
 ### Vì sao Kundun box không rơi Zen?
 
-Đây là thiết kế của server. Kundun +1 đến +5 luôn trả về một item Excellent để giữ nhịp chơi nhanh.
+Kundun +1 đến +5 luôn trả về một item Excellent có Luck để giữ nhịp chơi nhanh.
 
 ### Vì sao đồ Excellent từ Kundun không có đủ sáu option?
 
-Kundun box thường vẫn quay option Excellent ngẫu nhiên. Muốn bảo đảm sáu Excellent options, Luck, skill và +16, cần săn GM Gift từ boss.
+Kundun box thường vẫn quay số excellent option ngẫu nhiên, nhưng Luck được bảo đảm. Muốn bảo đảm sáu Excellent options, Luck, skill và +16, cần săn GM Gift từ boss.
 
 ### Tôi có cần reset nhiều lần không?
 
@@ -265,10 +278,10 @@ Shop bán đủ skill phù hợp với class, kể cả skill cấp cao. Yêu c�
 ## 14. Tóm tắt cho người mới
 
 ```text
-Mua đồ Excellent +7 và skill đúng class
-→ mua potion 255
+Mua đồ Excellent +7 có Luck và skill đúng class
+→ mua potion 255, item change class hoặc đồ tạo cánh tại Amy
 → lập party lên level 400
-→ farm Kundun +1/+2/+3
+→ farm Zen/ngọc/Kundun +1/+2/+3; quái không rơi trang bị
 → theo invasion mỗi 10 phút
 → săn Kundun +4/+5 và GM Gift
 → hoàn thiện build rồi PvP

@@ -59,7 +59,6 @@ internal class TestInitializationWithEfCore
         var contextProvider = new InMemoryPersistenceContextProvider();
         var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
         await dataInitialization.CreateInitialDataAsync(1, true).ConfigureAwait(false);
-        await this.AssertIcarusFeatherAndCrestDropGroupsAsync(contextProvider).ConfigureAwait(false);
         await this.AssertCastleSiegeUpdatePlugInAsync(contextProvider).ConfigureAwait(false);
         await this.TestIfItemsFitIntoInventoriesAsync(contextProvider).ConfigureAwait(false);
         await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
@@ -95,9 +94,12 @@ internal class TestInitializationWithEfCore
             Assert.That(new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership }.All(stat => configuration.Attributes.Single(attribute => attribute == stat).MaximumValue == 32_767), Is.True);
             Assert.That(permanentMonsterSpawns, Is.Not.Empty);
             Assert.That(permanentMonsterSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
-            Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops >= 4 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
+            Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops == 2 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
             Assert.That(configuration.MiniGameDefinitions.All(miniGame => miniGame.ArePlayerKillersAllowedToEnter), Is.True);
         });
+
+        Assert.That(configuration.Maps.SelectMany(map => map.DropItemGroups).All(group => group.ItemType == SpecialItemType.Money), Is.True);
+        Assert.That(configuration.Monsters.SelectMany(monster => monster.Quests).SelectMany(quest => quest.RequiredItems).Where(item => item.Item?.IsQuestItem == true).All(item => item.DropItemGroup is null), Is.True);
 
         this.AssertEquipmentProfile(configuration, 254, [0, 2, 3], 2, [(5, 0), (5, 2)]);
         this.AssertEquipmentProfile(configuration, 251, [4, 6, 7], 5, [(0, 5), (0, 6)]);
@@ -125,6 +127,29 @@ internal class TestInitializationWithEfCore
                 Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)13, (short)29)));
             });
         }
+
+        var potionGirlItems = configuration.Monsters.Single(monster => monster.Number == 253).MerchantStore!.Items;
+        foreach (var (number, level) in new (short Number, byte Level)[]
+                 {
+                     (23, 0), (23, 1), (24, 0), (24, 1), (25, 0), (26, 0), (65, 0), (66, 0), (67, 0), (68, 0),
+                 })
+        {
+            Assert.That(potionGirlItems.Count(item => item.Definition is { Group: 14 } definition && definition.Number == number && item.Level == level), Is.EqualTo(1));
+        }
+
+        foreach (var (group, number) in new (byte Group, short Number)[] { (2, 6), (4, 6), (5, 7) })
+        {
+            var craftingItem = potionGirlItems.Single(item => item.Definition is { } definition && definition.Group == group && definition.Number == number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(craftingItem.Level, Is.EqualTo(4));
+                Assert.That(craftingItem.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(1));
+                Assert.That(craftingItem.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
+            });
+        }
+
+        Assert.That(potionGirlItems.Count(item => item.Definition is { Group: 13, Number: 14 }), Is.EqualTo(2));
+        Assert.That(potionGirlItems.Any(item => item.Definition is { Group: 13, Number: 52 }), Is.True);
 
         Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 3 }).Durability, Is.EqualTo(byte.MaxValue));
         Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 6 }).Durability, Is.EqualTo(byte.MaxValue));
@@ -158,14 +183,15 @@ internal class TestInitializationWithEfCore
         {
             Assert.That(boss.DropItemGroups.Intersect(gachaGroups), Is.EquivalentTo(gachaGroups.Skip(3)));
             Assert.That(boss.DropItemGroups.Where(group => group.Chance < 1.0), Is.EquivalentTo(gachaGroups.Skip(3)));
-            Assert.That(boss.NumberOfMaximumItemDrops, Is.GreaterThanOrEqualTo(5 + boss.DropItemGroups.Count(group => group.Chance >= 1.0)));
+            Assert.That(boss.NumberOfMaximumItemDrops, Is.EqualTo(2));
         }
 
         var regularMonsters = permanentMonsterSpawns.Select(spawn => spawn.MonsterDefinition!).Where(monster => !bossNumbers.Contains(monster.Number)).Distinct();
         foreach (var monster in regularMonsters)
         {
             Assert.That(monster.DropItemGroups.Intersect(gachaGroups), Is.EquivalentTo(gachaGroups.Take(3)));
-            Assert.That(monster.NumberOfMaximumItemDrops, Is.GreaterThanOrEqualTo(5 + monster.DropItemGroups.Count(group => group.Chance >= 1.0)));
+            Assert.That(monster.DropItemGroups.Single(group => group.ItemType == SpecialItemType.Jewel).Chance, Is.EqualTo(0.01));
+            Assert.That(monster.NumberOfMaximumItemDrops, Is.EqualTo(2));
         }
 
         this.AssertContinuousBossEvent<GoldenInvasionPlugIn>(configuration, TimeOnly.MinValue);
@@ -369,6 +395,31 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests that the restricted-drop update repairs existing maps, monsters, and Potion Girl stock idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestRestrictInstantServerDropsUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var randomItems = configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+            configuration.Maps.First().DropItemGroups.Add(randomItems);
+            configuration.Monsters.First(monster => monster.ObjectKind == NpcObjectKind.Monster).DropItemGroups.Add(randomItems);
+            configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0)).Chance = 1.0;
+            var update = new RestrictInstantServerDropsUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Tests that applying the update for Crest of Monarch in Season 6 is idempotent.
     /// </summary>
     [Test]
@@ -468,33 +519,6 @@ internal class TestInitializationWithEfCore
                 Assert.Warn($"{ex.Message} Character: {character.Name}");
             }
         }
-    }
-
-    private async Task AssertIcarusFeatherAndCrestDropGroupsAsync(IPersistenceContextProvider contextProvider)
-    {
-        using var context = contextProvider.CreateNewConfigurationContext();
-        var gameConfiguration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).First();
-        var map = gameConfiguration.Maps.First(m => m.Number == IcarusMapNumber && m.Discriminator == 0);
-
-        var featherGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == FeatherDropGroupId);
-        var crestGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == CrestDropGroupId);
-
-        Assert.That(map.DropItemGroups.Count(group => group.GetId() == FeatherDropGroupId), Is.EqualTo(1));
-        Assert.That(map.DropItemGroups.Count(group => group.GetId() == CrestDropGroupId), Is.EqualTo(1));
-
-        Assert.That(featherGroup.Chance, Is.EqualTo(0.001));
-        Assert.That(featherGroup.MinimumMonsterLevel, Is.EqualTo((byte)82));
-        Assert.That(featherGroup.ItemLevel, Is.Null);
-        Assert.That(featherGroup.PossibleItems, Has.Count.EqualTo(1));
-        Assert.That(featherGroup.PossibleItems.Single().Group, Is.EqualTo((byte)13));
-        Assert.That(featherGroup.PossibleItems.Single().Number, Is.EqualTo((short)14));
-
-        Assert.That(crestGroup.Chance, Is.EqualTo(0.001));
-        Assert.That(crestGroup.MinimumMonsterLevel, Is.EqualTo((byte)82));
-        Assert.That(crestGroup.ItemLevel, Is.EqualTo((byte)1));
-        Assert.That(crestGroup.PossibleItems, Has.Count.EqualTo(1));
-        Assert.That(crestGroup.PossibleItems.Single().Group, Is.EqualTo((byte)13));
-        Assert.That(crestGroup.PossibleItems.Single().Number, Is.EqualTo((short)14));
     }
 
     private async Task AssertCastleSiegeDataAsync(IPersistenceContextProvider contextProvider)

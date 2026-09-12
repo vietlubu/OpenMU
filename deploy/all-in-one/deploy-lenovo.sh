@@ -6,6 +6,7 @@ expected_data_version=119
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 lan_config_dir=/home/vietlubu/.config/openmu
 compose_dir="$repo_root/deploy/all-in-one"
+image_repository=${OPENMU_IMAGE_REPOSITORY:-ghcr.io/vietlubu/openmu}
 
 cd "$repo_root"
 previous_head=$(git rev-parse HEAD)
@@ -29,8 +30,12 @@ if [ "$previous_head" != "$(git rev-parse HEAD)" ]; then
     exec "$0" "$branch"
 fi
 
+revision=$(git rev-parse HEAD)
+OPENMU_IMAGE="$image_repository:sha-$revision"
+export OPENMU_IMAGE
+
 compose() {
-    sudo -n docker compose \
+    sudo -n env OPENMU_IMAGE="$OPENMU_IMAGE" docker compose \
         -p openmu \
         --project-directory "$compose_dir" \
         --env-file "$lan_config_dir/admin.env" \
@@ -39,10 +44,7 @@ compose() {
         "$@"
 }
 
-sudo -n docker build \
-    -t munique/openmu:latest \
-    -f "$repo_root/src/Startup/Dockerfile" \
-    "$repo_root/src"
+sudo -n docker pull "$OPENMU_IMAGE"
 
 compose stop openmu-startup
 if ! compose run --rm --no-deps openmu-startup -applymandatoryupdates; then
@@ -74,5 +76,5 @@ fi
 
 image_id=$(sudo -n docker inspect -f '{{.Image}}' openmu-startup)
 echo "Deployed branch $branch at $(git rev-parse --short HEAD)"
-echo "Container image: $image_id"
+echo "Container image: $OPENMU_IMAGE ($image_id)"
 echo "Season 6 data version: $installed_data_version"

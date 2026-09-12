@@ -8,6 +8,7 @@ lan_config_dir=/home/vietlubu/.config/openmu
 compose_dir="$repo_root/deploy/all-in-one"
 
 cd "$repo_root"
+previous_head=$(git rev-parse HEAD)
 
 if [ -n "$(git status --porcelain)" ]; then
     echo "Refusing to deploy a dirty working tree." >&2
@@ -24,6 +25,9 @@ done
 git fetch origin "$branch"
 git checkout "$branch"
 git pull --ff-only origin "$branch"
+if [ "$previous_head" != "$(git rev-parse HEAD)" ]; then
+    exec "$0" "$branch"
+fi
 
 sudo -n docker build \
     -t munique/openmu:latest \

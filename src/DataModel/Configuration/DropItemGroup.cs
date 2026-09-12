@@ -46,6 +46,11 @@ public enum SpecialItemType
     /// The jewel special item type.
     /// </summary>
     Jewel,
+
+    /// <summary>
+    /// An excellent item with every supported excellent option.
+    /// </summary>
+    FullExcellent,
 }
 
 /// <summary>

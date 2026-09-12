@@ -13,6 +13,7 @@ using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
 using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
+using MUnique.OpenMU.Persistence.Initialization.Items;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
@@ -26,24 +27,43 @@ internal static class InstantServerConfiguration
     internal const float ExperienceRate = 9999f;
 
     /// <summary>
-    /// Gets the stat points granted by each level-up.
+    /// Gets the points granted per level.
     /// </summary>
     internal const float PointsPerLevel = 500f;
 
     /// <summary>
-    /// Gets the minimum monsters in every permanent hunting pack.
+    /// Gets the minimum automatic spawn quantity.
     /// </summary>
     internal const short MonsterPackSize = 10;
 
     /// <summary>
-    /// Gets the multiplier applied when picked-up Zen is credited.
+    /// Gets the picked-up Zen multiplier.
     /// </summary>
     internal const float MoneyAmountRate = 1_000f;
 
     /// <summary>
-    /// Gets the respawn delay of regular monsters.
+    /// Gets the regular monster respawn delay.
     /// </summary>
     internal static readonly TimeSpan MonsterRespawnDelay = TimeSpan.FromSeconds(5);
+
+    private static readonly byte[] DarkWizardClasses = [0, 2, 3];
+    private static readonly byte[] DarkKnightClasses = [4, 6, 7];
+    private static readonly byte[] FairyElfClasses = [8, 10, 11];
+    private static readonly byte[] MagicGladiatorClasses = [12, 13];
+    private static readonly byte[] DarkLordClasses = [16, 17];
+    private static readonly byte[] SummonerClasses = [20, 22, 23];
+    private static readonly byte[] RageFighterClasses = [24, 25];
+    private static readonly short[] SpecialistMerchantNumbers = [230, 242, 243, 245, 246, 251, 254, 416, 417];
+    private static readonly short[] GeneralGoodsMerchantNumbers = [253, 259, 376, 377, 415, 545, 577];
+    private static readonly HashSet<short> BossMonsterNumbers =
+    [
+        43, 44, 53, 54, 78, 79, 80, 81, 82, 83, 135, 161, 181, 189, 197, 267, 275, 295, 338, 361, 362, 363, 364, 440, 459,
+    ];
+
+    /// <summary>
+    /// Gets the merchants whose stores are rebuilt by this configuration.
+    /// </summary>
+    internal static IReadOnlyCollection<short> RebuiltMerchantNumbers { get; } = SpecialistMerchantNumbers.Concat(GeneralGoodsMerchantNumbers).ToArray();
 
     /// <summary>
     /// Applies settings which are stored on the game configuration.
@@ -60,18 +80,20 @@ internal static class InstantServerConfiguration
         ConfigureLevelUpPoints(gameConfiguration);
         ConfigureMonsterPacks(gameConfiguration);
         ConfigurePvp(gameConfiguration);
+        ConfigurePotionStacks(gameConfiguration);
         ConfigureMerchantStores(context, gameConfiguration);
+        ConfigureGacha(context, gameConfiguration);
     }
 
     /// <summary>
-    /// Activates and staggers the built-in boss invasions so at least one is normally running.
+    /// Configures the built-in boss invasions as a non-overlapping thirty-minute circuit.
     /// </summary>
     /// <param name="gameConfiguration">The game configuration.</param>
     internal static void ConfigureBossEvents(GameConfiguration gameConfiguration)
     {
         ConfigureBossEvent<GoldenInvasionPlugIn>(gameConfiguration, TimeSpan.Zero);
-        ConfigureBossEvent<RedDragonInvasionPlugIn>(gameConfiguration, TimeSpan.FromMinutes(3));
-        ConfigureBossEvent<WhiteWizardInvasionPlugIn>(gameConfiguration, TimeSpan.FromMinutes(6));
+        ConfigureBossEvent<RedDragonInvasionPlugIn>(gameConfiguration, TimeSpan.FromMinutes(10));
+        ConfigureBossEvent<WhiteWizardInvasionPlugIn>(gameConfiguration, TimeSpan.FromMinutes(20));
     }
 
     /// <summary>
@@ -97,6 +119,29 @@ internal static class InstantServerConfiguration
         gameConfiguration.GlobalBaseAttributeValues.Add(context.CreateNew<ConstValueAttribute>(MoneyAmountRate, definition, AggregateType.AddRaw));
     }
 
+    /// <summary>
+    /// Repairs the points-per-level class templates.
+    /// </summary>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureLevelUpPoints(GameConfiguration gameConfiguration)
+    {
+        foreach (var characterClass in gameConfiguration.CharacterClasses)
+        {
+            if (characterClass.StatAttributes.FirstOrDefault(attribute => attribute.Attribute == Stats.PointsPerLevelUp) is { } pointsPerLevel)
+            {
+                pointsPerLevel.BaseValue = PointsPerLevel;
+            }
+        }
+
+        foreach (var stat in new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership })
+        {
+            if (gameConfiguration.Attributes.FirstOrDefault(attribute => attribute == stat) is { } persistentStat)
+            {
+                persistentStat.MaximumValue = 32_767;
+            }
+        }
+    }
+
     private static void ConfigureBossEvent<TPlugIn>(GameConfiguration gameConfiguration, TimeSpan offset)
         where TPlugIn : SimpleInvasionPlugIn, new()
     {
@@ -108,16 +153,11 @@ internal static class InstantServerConfiguration
 
         var configuration = (PeriodicInvasionConfiguration)new TPlugIn().CreateDefaultConfig();
         configuration.PreStartMessageDelay = TimeSpan.Zero;
-        configuration.TaskDuration = TimeSpan.FromMinutes(8);
+        configuration.TaskDuration = TimeSpan.FromMinutes(10);
         configuration.Timetable = PeriodicTaskConfiguration.GenerateTimeSequence(
-                TimeSpan.FromMinutes(10),
+                TimeSpan.FromMinutes(30),
                 TimeOnly.FromTimeSpan(offset))
             .ToList();
-        foreach (var mob in configuration.Mobs)
-        {
-            mob.Count = Math.Min((ushort)254, (ushort)(mob.Count * 2));
-        }
-
         plugInConfiguration.IsActive = true;
         plugInConfiguration.SetConfiguration(configuration, null);
     }
@@ -139,27 +179,8 @@ internal static class InstantServerConfiguration
 
         foreach (var monster in gameConfiguration.Monsters.Where(monster => monster.ObjectKind == NpcObjectKind.Monster))
         {
-            monster.NumberOfMaximumItemDrops = Math.Max((byte)4, monster.NumberOfMaximumItemDrops);
+            monster.NumberOfMaximumItemDrops = Math.Max(4, monster.NumberOfMaximumItemDrops);
             monster.RespawnDelay = MonsterRespawnDelay;
-        }
-    }
-
-    private static void ConfigureLevelUpPoints(GameConfiguration gameConfiguration)
-    {
-        foreach (var characterClass in gameConfiguration.CharacterClasses)
-        {
-            if (characterClass.StatAttributes.FirstOrDefault(attribute => attribute.Attribute == Stats.PointsPerLevelUp) is { } pointsPerLevel)
-            {
-                pointsPerLevel.BaseValue = PointsPerLevel;
-            }
-        }
-
-        foreach (var stat in new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership })
-        {
-            if (gameConfiguration.Attributes.FirstOrDefault(attribute => attribute == stat) is { } persistentStat)
-            {
-                persistentStat.MaximumValue = 32_767;
-            }
         }
     }
 
@@ -190,90 +211,367 @@ internal static class InstantServerConfiguration
         }
     }
 
+    private static void ConfigurePotionStacks(GameConfiguration gameConfiguration)
+    {
+        GetItemDefinition(gameConfiguration, 14, 3).Durability = byte.MaxValue;
+        GetItemDefinition(gameConfiguration, 14, 6).Durability = byte.MaxValue;
+    }
+
     private static void ConfigureMerchantStores(IContext context, GameConfiguration gameConfiguration)
     {
-        var stores = gameConfiguration.Monsters
-            .Where(monster => monster.MerchantStore is not null)
-            .OrderBy(monster => monster.Number)
-            .Select(monster => monster.MerchantStore!)
-            .Distinct<ItemStorage>(ReferenceEqualityComparer.Instance)
-            .ToList();
-
-        if (stores.Count == 0)
+        ConfigureSpecialistStore(context, gameConfiguration, 254, packer =>
         {
-            return;
+            AddEquipmentProfile(context, gameConfiguration, packer, DarkWizardClasses, 2, [(5, 0), (5, 2)]);
+            AddSkillItems(context, gameConfiguration, packer, DarkWizardClasses.Concat(MagicGladiatorClasses));
+        });
+        ConfigureSpecialistStore(context, gameConfiguration, 251, packer =>
+        {
+            AddEquipmentProfile(context, gameConfiguration, packer, DarkKnightClasses, 5, [(0, 5), (0, 6)]);
+            AddEquipmentProfile(context, gameConfiguration, packer, MagicGladiatorClasses, 15, [(0, 5), (5, 0)]);
+            AddEquipmentProfile(context, gameConfiguration, packer, DarkLordClasses, 25, [(2, 8), (2, 9)]);
+            AddEquipmentProfile(context, gameConfiguration, packer, RageFighterClasses, 59, [(0, 32), (0, 33)]);
+        });
+        ConfigureSpecialistStore(context, gameConfiguration, 230, packer =>
+            AddSkillItems(context, gameConfiguration, packer, DarkKnightClasses.Concat(DarkLordClasses).Concat(RageFighterClasses)));
+        ConfigureSpecialistStore(context, gameConfiguration, 242, packer => AddSkillItems(context, gameConfiguration, packer, FairyElfClasses));
+        ConfigureSpecialistStore(context, gameConfiguration, 243, packer =>
+            AddEquipmentProfile(context, gameConfiguration, packer, FairyElfClasses, 10, [(4, 0), (4, 3)]));
+        ConfigureSpecialistStore(context, gameConfiguration, 416, packer =>
+            AddEquipmentProfile(context, gameConfiguration, packer, SummonerClasses, 40, [(5, 15), (5, 21), (5, 22)]));
+        ConfigureSpecialistStore(context, gameConfiguration, 417, packer => AddSkillItems(context, gameConfiguration, packer, SummonerClasses));
+        ConfigureSpecialistStore(context, gameConfiguration, 245, packer =>
+        {
+            AddEquipmentProfile(context, gameConfiguration, packer, DarkWizardClasses, 2, [(5, 0), (5, 2)]);
+            AddSkillItems(context, gameConfiguration, packer, DarkWizardClasses.Concat(MagicGladiatorClasses));
+        });
+        ConfigureSpecialistStore(context, gameConfiguration, 246, packer =>
+        {
+            // ponytail: the client exposes only 120 merchant slots; complete armor sets remain in their reachable home-town stores.
+            AddWeaponProfile(
+                context,
+                gameConfiguration,
+                packer,
+                DarkKnightClasses.Concat(FairyElfClasses).Concat(MagicGladiatorClasses).Concat(DarkLordClasses).Concat(RageFighterClasses),
+                [(0, 5), (0, 6), (4, 0), (4, 3), (5, 0), (2, 8), (2, 9), (0, 32), (0, 33)]);
+        });
+
+        foreach (var npcNumber in GeneralGoodsMerchantNumbers)
+        {
+            ConfigureSpecialistStore(context, gameConfiguration, npcNumber, packer => AddGeneralGoods(context, gameConfiguration, packer));
         }
+    }
 
-        var packers = stores.Select(store => new MerchantStorePacker(store)).ToList();
-        var soldDefinitions = stores
-            .SelectMany(store => store.Items)
-            .Where(item => item.Definition is not null)
-            .Select(item => item.Definition!)
-            .ToHashSet();
-        var shopItems = gameConfiguration.Items
-            .Where(item => IsShopItem(item) && !soldDefinitions.Contains(item))
-            .OrderBy(GetShopPriority)
-            .ThenBy(item => item.Group)
-            .ThenBy(item => item.Number);
+    private static void ConfigureSpecialistStore(IContext context, GameConfiguration gameConfiguration, short npcNumber, Action<MerchantStorePacker> populate)
+    {
+        var monster = gameConfiguration.Monsters.First(monster => monster.Number == npcNumber && monster.MerchantStore is not null);
+        var store = monster.MerchantStore!;
+        store.Items.Clear();
+        var packer = new MerchantStorePacker(store, monster);
+        populate(packer);
+        packer.Complete();
+    }
 
-        foreach (var definition in shopItems)
+    private static void AddEquipmentProfile(
+        IContext context,
+        GameConfiguration gameConfiguration,
+        MerchantStorePacker packer,
+        IEnumerable<byte> classNumbers,
+        byte armorSetNumber,
+        IEnumerable<(byte Group, byte Number)> weapons)
+    {
+        var classes = classNumbers.ToHashSet();
+        var itemHelper = new ItemHelper(context, gameConfiguration);
+        foreach (var group in new[] { ItemGroups.Helm, ItemGroups.Armor, ItemGroups.Pants, ItemGroups.Gloves, ItemGroups.Boots })
         {
-            MerchantStorePacker? packer = null;
-            byte slot = 0;
-            foreach (var candidate in packers)
-            {
-                if (candidate.TryReserve(definition, out slot))
-                {
-                    packer = candidate;
-                    break;
-                }
-            }
-
-            if (packer is null)
+            var definition = gameConfiguration.Items.FirstOrDefault(item => item.Group == (byte)group
+                                                                            && item.Number == armorSetNumber
+                                                                            && item.QualifiedCharacters.Any(characterClass => classes.Contains(characterClass.Number)));
+            if (definition is null)
             {
                 continue;
             }
 
-            var item = context.CreateNew<Item>();
-            item.Definition = definition;
-            item.ItemSlot = slot;
-            item.Durability = Math.Max(1d, definition.Durability);
-            item.Level = 0;
-            item.HasSkill = definition.ItemSlot is not null && definition.Skill is not null;
-            item.SocketCount = 0;
-            packer.Store.Items.Add(item);
+            var item = itemHelper.CreateSetItem(0, armorSetNumber, group, Stats.MaximumHealth, level: 7);
+            item.Durability = item.GetMaximumDurabilityOfOnePiece();
+            packer.Add(item);
+        }
+
+        foreach (var (group, number) in weapons)
+        {
+            var definition = GetItemDefinition(gameConfiguration, group, number);
+            if (!definition.QualifiedCharacters.Any(characterClass => classes.Contains(characterClass.Number)))
+            {
+                continue;
+            }
+
+            var item = itemHelper.CreateWeapon(0, (ItemGroups)group, number, 7, 0, false, definition.Skill is not null, Stats.ExcellentDamageChance);
+            item.Durability = item.GetMaximumDurabilityOfOnePiece();
+            packer.Add(item);
         }
     }
 
-    private static bool IsShopItem(ItemDefinition item)
-        => !item.IsQuestItem
-           && item.Group <= 15
-           && item.Number is >= 0 and <= byte.MaxValue
-           && item.Width > 0
-           && item.Width <= InventoryConstants.RowSize
-           && item.Height > 0
-           && item.Height <= InventoryConstants.WarehouseRows;
+    private static void AddWeaponProfile(
+        IContext context,
+        GameConfiguration gameConfiguration,
+        MerchantStorePacker packer,
+        IEnumerable<byte> classNumbers,
+        IEnumerable<(byte Group, byte Number)> weapons)
+    {
+        var classes = classNumbers.ToHashSet();
+        var itemHelper = new ItemHelper(context, gameConfiguration);
+        foreach (var (group, number) in weapons.Distinct())
+        {
+            var definition = GetItemDefinition(gameConfiguration, group, number);
+            if (!definition.QualifiedCharacters.Any(characterClass => classes.Contains(characterClass.Number)))
+            {
+                continue;
+            }
 
-    private static int GetShopPriority(ItemDefinition item)
-        => item.Group >= 12 || item.Skill is not null ? 0 : 1;
+            var item = itemHelper.CreateWeapon(0, (ItemGroups)group, number, 7, 0, false, definition.Skill is not null, Stats.ExcellentDamageChance);
+            item.Durability = item.GetMaximumDurabilityOfOnePiece();
+            packer.Add(item);
+        }
+    }
+
+    private static void AddSkillItems(IContext context, GameConfiguration gameConfiguration, MerchantStorePacker packer, IEnumerable<byte> classNumbers)
+    {
+        var classes = classNumbers.ToHashSet();
+        var definitions = gameConfiguration.Items
+            .Where(item => item.Group is 12 or 15
+                           && item.ItemSlot is null
+                           && item.Skill is not null
+                           && item.QualifiedCharacters.Any(characterClass => classes.Contains(characterClass.Number)))
+            .OrderBy(item => item.Group)
+            .ThenBy(item => item.Number)
+            .ToList();
+
+        foreach (var definition in definitions)
+        {
+            if (definition is { Group: 12, Number: 11 })
+            {
+                for (byte level = 0; level <= 6; level++)
+                {
+                    packer.Add(CreateStoreItem(context, definition, level: level));
+                }
+            }
+            else
+            {
+                packer.Add(CreateStoreItem(context, definition));
+            }
+        }
+    }
+
+    private static void AddGeneralGoods(IContext context, GameConfiguration gameConfiguration, MerchantStorePacker packer)
+    {
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 14, 3), byte.MaxValue, 1));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 14, 6), byte.MaxValue, 1));
+        var antidote = GetItemDefinition(gameConfiguration, 14, 8);
+        packer.Add(CreateStoreItem(context, antidote, Math.Max(1, (int)antidote.Durability)));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 4, 7)));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 4, 15)));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 14, 10)));
+        packer.Add(CreateStoreItem(context, GetItemDefinition(gameConfiguration, 13, 29)));
+    }
+
+    private static Item CreateStoreItem(IContext context, ItemDefinition definition, double durability = 1, byte level = 0)
+    {
+        var item = context.CreateNew<Item>();
+        item.Definition = definition;
+        item.Durability = durability;
+        item.Level = level;
+        return item;
+    }
+
+    private static void ConfigureGacha(IContext context, GameConfiguration gameConfiguration)
+    {
+        var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
+        foreach (var level in Enumerable.Range(8, 5).Select(level => (byte)level))
+        {
+            var excellentGroup = kundunBox.DropItems.Single(group => group.SourceItemLevel == level && group.ItemType == SpecialItemType.Excellent);
+            excellentGroup.Chance = 1.0;
+            foreach (var obsolete in kundunBox.DropItems.Where(group => group.SourceItemLevel == level && group != excellentGroup).ToList())
+            {
+                kundunBox.DropItems.Remove(obsolete);
+            }
+        }
+
+        ConfigureJackpotOpening(context, gameConfiguration, kundunBox);
+        RemoveLegacyKundunMonsterDrops(gameConfiguration, kundunBox);
+
+        var kundunOne = UpsertGachaGroup(context, gameConfiguration, 1, "Kundun +1 Gacha", 0.02, kundunBox, 8);
+        var kundunTwo = UpsertGachaGroup(context, gameConfiguration, 2, "Kundun +2 Gacha", 0.015, kundunBox, 9);
+        var kundunThree = UpsertGachaGroup(context, gameConfiguration, 3, "Kundun +3 Gacha", 0.01, kundunBox, 10);
+        var kundunFour = UpsertGachaGroup(context, gameConfiguration, 4, "Kundun +4 Boss Gacha", 0.475, kundunBox, 11);
+        var kundunFive = UpsertGachaGroup(context, gameConfiguration, 5, "Kundun +5 Boss Gacha", 0.475, kundunBox, 12);
+        var jackpotBox = GetItemDefinition(gameConfiguration, 14, 52);
+        var jackpot = UpsertGachaGroup(context, gameConfiguration, 6, "Full Option GM Gift Boss Gacha", 0.05, jackpotBox, 0);
+        var configuredGroups = new[] { kundunOne, kundunTwo, kundunThree, kundunFour, kundunFive, jackpot };
+
+        foreach (var monster in gameConfiguration.Monsters)
+        {
+            foreach (var group in configuredGroups)
+            {
+                monster.DropItemGroups.Remove(group);
+            }
+        }
+
+        var regularMonsters = gameConfiguration.Maps
+            .SelectMany(map => map.MonsterSpawns)
+            .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
+            .Select(spawn => spawn.MonsterDefinition!)
+            .Where(monster => !BossMonsterNumbers.Contains(monster.Number))
+            .Distinct()
+            .ToList();
+        var bosses = gameConfiguration.Monsters
+            .Where(monster => monster.ObjectKind == NpcObjectKind.Monster && BossMonsterNumbers.Contains(monster.Number))
+            .ToList();
+        foreach (var boss in bosses)
+        {
+            foreach (var obsolete in boss.DropItemGroups.Where(group => group.Chance < 1.0 && !configuredGroups.Contains(group)).ToList())
+            {
+                boss.DropItemGroups.Remove(obsolete);
+            }
+        }
+
+        foreach (var monster in regularMonsters)
+        {
+            AttachGroups(monster, kundunOne, kundunTwo, kundunThree);
+            ReserveChanceDropSlot(monster);
+        }
+
+        foreach (var monster in bosses)
+        {
+            AttachGroups(monster, kundunFour, kundunFive, jackpot);
+            ReserveChanceDropSlot(monster);
+        }
+    }
+
+    private static void ConfigureJackpotOpening(IContext context, GameConfiguration gameConfiguration, ItemDefinition kundunBox)
+    {
+        var gift = GetItemDefinition(gameConfiguration, 14, 52);
+        var jackpotId = GuidHelper.CreateGuid<ItemDropItemGroup>(gift.Group, gift.Number, 0);
+        var jackpot = gift.DropItems.FirstOrDefault(group => group.GetId() == jackpotId);
+        if (jackpot is null)
+        {
+            jackpot = context.CreateNew<ItemDropItemGroup>();
+            jackpot.SetGuid(jackpotId);
+            gift.DropItems.Add(jackpot);
+        }
+
+        jackpot.SourceItemLevel = 0;
+        jackpot.ItemType = SpecialItemType.FullExcellent;
+        jackpot.Chance = 1.0;
+        jackpot.MinimumLevel = 13;
+        jackpot.MaximumLevel = 13;
+        jackpot.Description = "Full Option Gacha Box (GM Gift)";
+        jackpot.DropEffect = ItemDropEffect.FanfareSound;
+        jackpot.PossibleItems.Clear();
+        foreach (var item in kundunBox.DropItems.Single(group => group.SourceItemLevel == 12 && group.ItemType == SpecialItemType.Excellent).PossibleItems)
+        {
+            jackpot.PossibleItems.Add(item);
+        }
+    }
+
+    private static DropItemGroup UpsertGachaGroup(
+        IContext context,
+        GameConfiguration gameConfiguration,
+        short tier,
+        string description,
+        double chance,
+        ItemDefinition carrier,
+        byte itemLevel)
+    {
+        var id = GuidHelper.CreateGuid<DropItemGroup>(9_999, tier);
+        var group = gameConfiguration.DropItemGroups.FirstOrDefault(group => group.GetId() == id);
+        if (group is null)
+        {
+            group = context.CreateNew<DropItemGroup>();
+            group.SetGuid(id);
+            gameConfiguration.DropItemGroups.Add(group);
+        }
+
+        group.Description = description;
+        group.Chance = chance;
+        group.ItemType = SpecialItemType.RandomItem;
+        group.ItemLevel = itemLevel;
+        group.MinimumMonsterLevel = null;
+        group.MaximumMonsterLevel = null;
+        group.Monster = null;
+        group.PossibleItems.Clear();
+        group.PossibleItems.Add(carrier);
+        return group;
+    }
+
+    private static void RemoveLegacyKundunMonsterDrops(GameConfiguration gameConfiguration, ItemDefinition kundunBox)
+    {
+        var legacyGroups = gameConfiguration.DropItemGroups
+            .Where(group => group.Monster is not null
+                            && group.ItemLevel is >= 8 and <= 12
+                            && group.PossibleItems.Count == 1
+                            && group.PossibleItems.Single() == kundunBox)
+            .ToList();
+        foreach (var group in legacyGroups)
+        {
+            group.Monster?.DropItemGroups.Remove(group);
+            gameConfiguration.DropItemGroups.Remove(group);
+        }
+    }
+
+    private static void AttachGroups(MonsterDefinition monster, params DropItemGroup[] groups)
+    {
+        foreach (var group in groups)
+        {
+            if (!monster.DropItemGroups.Contains(group))
+            {
+                monster.DropItemGroups.Add(group);
+            }
+        }
+    }
+
+    private static void ReserveChanceDropSlot(MonsterDefinition monster)
+    {
+        var guaranteedMonsterDrops = monster.DropItemGroups.Count(group => group.Chance >= 1.0);
+        monster.NumberOfMaximumItemDrops = Math.Max(monster.NumberOfMaximumItemDrops, 5 + guaranteedMonsterDrops);
+    }
+
+    private static ItemDefinition GetItemDefinition(GameConfiguration gameConfiguration, int group, int number)
+        => gameConfiguration.Items.First(item => item.Group == group && item.Number == number);
 
     private sealed class MerchantStorePacker
     {
         private readonly bool[,] _occupied = new bool[InventoryConstants.WarehouseRows, InventoryConstants.RowSize];
+        private readonly MonsterDefinition _merchant;
+        private readonly List<Item> _pendingItems = [];
 
-        internal MerchantStorePacker(ItemStorage store)
+        internal MerchantStorePacker(ItemStorage store, MonsterDefinition merchant)
         {
             _ = new Storage(InventoryConstants.WarehouseSize, store);
             this.Store = store;
-            foreach (var item in store.Items.Where(item => item.Definition is not null))
-            {
-                this.MarkExisting(item);
-            }
+            this._merchant = merchant;
         }
 
         internal ItemStorage Store { get; }
 
-        internal bool TryReserve(ItemDefinition definition, out byte slot)
+        internal void Add(Item item)
+        {
+            this._pendingItems.Add(item);
+        }
+
+        internal void Complete()
+        {
+            foreach (var item in this._pendingItems.OrderByDescending(item => item.Definition?.Height).ThenByDescending(item => item.Definition?.Width))
+            {
+                if (item.Definition is null || !this.TryReserve(item.Definition, out var slot))
+                {
+                    throw new InvalidOperationException($"Merchant {this._merchant} cannot fit item {item.Definition}.");
+                }
+
+                item.ItemSlot = slot;
+                this.Store.Items.Add(item);
+            }
+        }
+
+        private bool TryReserve(ItemDefinition definition, out byte slot)
         {
             for (var row = 0; row <= InventoryConstants.WarehouseRows - definition.Height; row++)
             {
@@ -286,25 +584,12 @@ internal static class InstantServerConfiguration
 
                     slot = (byte)((row * InventoryConstants.RowSize) + column);
                     this.MarkOccupied(row, column, definition.Width, definition.Height);
-
                     return true;
                 }
             }
 
             slot = 0;
             return false;
-        }
-
-        private void MarkExisting(Item item)
-        {
-            var definition = item.Definition!;
-            var row = item.ItemSlot / InventoryConstants.RowSize;
-            var column = item.ItemSlot % InventoryConstants.RowSize;
-            if (row + definition.Height <= InventoryConstants.WarehouseRows
-                && column + definition.Width <= InventoryConstants.RowSize)
-            {
-                this.MarkOccupied(row, column, definition.Width, definition.Height);
-            }
         }
 
         private bool Fits(int row, int column, int width, int height)

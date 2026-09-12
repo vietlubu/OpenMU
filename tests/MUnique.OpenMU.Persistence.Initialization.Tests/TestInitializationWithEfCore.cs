@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MUnique.OpenMU.AttributeSystem;
 using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Configuration;
+using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
@@ -74,25 +75,12 @@ internal class TestInitializationWithEfCore
             .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
             .ToList();
         var monsters = configuration.Monsters.Where(monster => monster.ObjectKind == NpcObjectKind.Monster).ToList();
-        var stores = configuration.Monsters
-            .Where(monster => monster.MerchantStore is not null)
-            .Select(monster => monster.MerchantStore!)
-            .Distinct<ItemStorage>(ReferenceEqualityComparer.Instance)
-            .ToList();
-        var eligibleShopItems = configuration.Items
-            .Where(item => !item.IsQuestItem
-                           && item.Group <= 15
-                           && item.Number is >= 0 and <= byte.MaxValue
-                           && item.Width > 0
-                           && item.Width <= InventoryConstants.RowSize
-                           && item.Height > 0
-                           && item.Height <= InventoryConstants.WarehouseRows)
-            .ToHashSet();
-        var soldItems = stores.SelectMany(store => store.Items).Select(item => item.Definition).OfType<DataModel.Configuration.Items.ItemDefinition>().ToHashSet();
 
-        foreach (var store in stores)
+        foreach (var npcNumber in new short[] { 230, 242, 243, 245, 246, 251, 253, 254, 259, 376, 377, 415, 416, 417, 545, 577 })
         {
-            Assert.DoesNotThrow(() => _ = new Storage(InventoryConstants.WarehouseSize, store));
+            var store = configuration.Monsters.Single(monster => monster.Number == npcNumber).MerchantStore;
+            Assert.That(store, Is.Not.Null, $"NPC {npcNumber}");
+            Assert.DoesNotThrow(() => _ = new Storage(InventoryConstants.WarehouseSize, store!), $"NPC {npcNumber}");
         }
 
         Assert.Multiple(() =>
@@ -104,19 +92,124 @@ internal class TestInitializationWithEfCore
             Assert.That(servers, Is.Not.Empty);
             Assert.That(servers.All(server => server is { ExperienceRate: 1.0f, PvpEnabled: true }), Is.True);
             Assert.That(configuration.CharacterClasses.SelectMany(characterClass => characterClass.StatAttributes).Where(attribute => attribute.Attribute == Stats.PointsPerLevelUp).All(attribute => attribute.BaseValue == 500f), Is.True);
-            Assert.That(399 * 500, Is.GreaterThan(5 * 32_767));
             Assert.That(new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership }.All(stat => configuration.Attributes.Single(attribute => attribute == stat).MaximumValue == 32_767), Is.True);
             Assert.That(permanentMonsterSpawns, Is.Not.Empty);
             Assert.That(permanentMonsterSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
             Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops >= 4 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
             Assert.That(configuration.MiniGameDefinitions.All(miniGame => miniGame.ArePlayerKillersAllowedToEnter), Is.True);
-            Assert.That(soldItems.Count, Is.GreaterThanOrEqualTo((int)(eligibleShopItems.Count * 0.8)));
-            Assert.That(eligibleShopItems.Where(item => item.Group >= 12 || item.Skill is not null).All(soldItems.Contains), Is.True);
         });
 
+        this.AssertEquipmentProfile(configuration, 254, [0, 2, 3], 2, [(5, 0), (5, 2)]);
+        this.AssertEquipmentProfile(configuration, 251, [4, 6, 7], 5, [(0, 5), (0, 6)]);
+        this.AssertEquipmentProfile(configuration, 251, [12, 13], 15, [(0, 5), (5, 0)]);
+        this.AssertEquipmentProfile(configuration, 251, [16, 17], 25, [(2, 8), (2, 9)]);
+        this.AssertEquipmentProfile(configuration, 251, [24, 25], 59, [(0, 32), (0, 33)]);
+        this.AssertEquipmentProfile(configuration, 243, [8, 10, 11], 10, [(4, 0), (4, 3)]);
+        this.AssertEquipmentProfile(configuration, 416, [20, 22, 23], 40, [(5, 15), (5, 21), (5, 22)]);
+        this.AssertSkillProfile(configuration, 254, [0, 2, 3, 12, 13]);
+        this.AssertSkillProfile(configuration, 230, [4, 6, 7, 16, 17, 24, 25]);
+        this.AssertSkillProfile(configuration, 242, [8, 10, 11]);
+        this.AssertSkillProfile(configuration, 417, [20, 22, 23]);
+
+        foreach (var npcNumber in new short[] { 253, 259, 376, 377, 415, 545, 577 })
+        {
+            var items = configuration.Monsters.Single(monster => monster.Number == npcNumber).MerchantStore!.Items;
+            Assert.Multiple(() =>
+            {
+                Assert.That(items.Single(item => item.Definition is { Group: 14, Number: 3 }).Durability, Is.EqualTo(255));
+                Assert.That(items.Single(item => item.Definition is { Group: 14, Number: 6 }).Durability, Is.EqualTo(255));
+                Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)14, (short)8)));
+                Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)4, (short)7)));
+                Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)4, (short)15)));
+                Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)14, (short)10)));
+                Assert.That(items.Select(item => (item.Definition!.Group, item.Definition.Number)), Does.Contain(((byte)13, (short)29)));
+            });
+        }
+
+        Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 3 }).Durability, Is.EqualTo(byte.MaxValue));
+        Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 6 }).Durability, Is.EqualTo(byte.MaxValue));
+        var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+        foreach (var level in Enumerable.Range(8, 5).Select(level => (byte)level))
+        {
+            Assert.That(kundunBox.DropItems.Where(group => group.SourceItemLevel == level), Has.Exactly(1).Items);
+            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level), Has.Property(nameof(DropItemGroup.Chance)).EqualTo(1.0));
+            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level).ItemType, Is.EqualTo(SpecialItemType.Excellent));
+        }
+
+        var jackpot = configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(jackpot.ItemType, Is.EqualTo(SpecialItemType.FullExcellent));
+            Assert.That(jackpot.Chance, Is.EqualTo(1.0));
+            Assert.That(jackpot.MinimumLevel, Is.EqualTo(13));
+            Assert.That(jackpot.MaximumLevel, Is.EqualTo(13));
+            Assert.That(jackpot.PossibleItems, Is.EquivalentTo(kundunBox.DropItems.Single(group => group.SourceItemLevel == 12).PossibleItems));
+        });
+
+        var gachaGroups = Enumerable.Range(1, 6)
+            .Select(tier => configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, (short)tier, 0, 0, 0, 0, 0, 0, 0, 0)))
+            .ToList();
+        Assert.That(gachaGroups.Select(group => group.Chance), Is.EqualTo(new[] { 0.02, 0.015, 0.01, 0.475, 0.475, 0.05 }));
+        Assert.That(gachaGroups.All(group => group.PossibleItems.Count == 1), Is.True);
+        Assert.That(configuration.DropItemGroups.Where(group => group.Monster is not null && group.ItemLevel is >= 8 and <= 12 && group.PossibleItems.Count == 1 && group.PossibleItems.Single() == kundunBox), Is.Empty);
+
+        var bossNumbers = new HashSet<short> { 43, 44, 53, 54, 78, 79, 80, 81, 82, 83, 135, 161, 181, 189, 197, 267, 275, 295, 338, 361, 362, 363, 364, 440, 459 };
+        foreach (var boss in monsters.Where(monster => bossNumbers.Contains(monster.Number)))
+        {
+            Assert.That(boss.DropItemGroups.Intersect(gachaGroups), Is.EquivalentTo(gachaGroups.Skip(3)));
+            Assert.That(boss.DropItemGroups.Where(group => group.Chance < 1.0), Is.EquivalentTo(gachaGroups.Skip(3)));
+            Assert.That(boss.NumberOfMaximumItemDrops, Is.GreaterThanOrEqualTo(5 + boss.DropItemGroups.Count(group => group.Chance >= 1.0)));
+        }
+
+        var regularMonsters = permanentMonsterSpawns.Select(spawn => spawn.MonsterDefinition!).Where(monster => !bossNumbers.Contains(monster.Number)).Distinct();
+        foreach (var monster in regularMonsters)
+        {
+            Assert.That(monster.DropItemGroups.Intersect(gachaGroups), Is.EquivalentTo(gachaGroups.Take(3)));
+            Assert.That(monster.NumberOfMaximumItemDrops, Is.GreaterThanOrEqualTo(5 + monster.DropItemGroups.Count(group => group.Chance >= 1.0)));
+        }
+
         this.AssertContinuousBossEvent<GoldenInvasionPlugIn>(configuration, TimeOnly.MinValue);
-        this.AssertContinuousBossEvent<RedDragonInvasionPlugIn>(configuration, new TimeOnly(0, 3));
-        this.AssertContinuousBossEvent<WhiteWizardInvasionPlugIn>(configuration, new TimeOnly(0, 6));
+        this.AssertContinuousBossEvent<RedDragonInvasionPlugIn>(configuration, new TimeOnly(0, 10));
+        this.AssertContinuousBossEvent<WhiteWizardInvasionPlugIn>(configuration, new TimeOnly(0, 20));
+    }
+
+    private void AssertEquipmentProfile(GameConfiguration configuration, short npcNumber, byte[] classes, byte setNumber, (byte Group, byte Number)[] weapons)
+    {
+        var classSet = classes.ToHashSet();
+        var storeItems = configuration.Monsters.Single(monster => monster.Number == npcNumber).MerchantStore!.Items;
+        var expectedDefinitions = configuration.Items
+            .Where(item => (item.Group is >= 7 and <= 11 && item.Number == setNumber || weapons.Contains((item.Group, (byte)item.Number)))
+                           && item.QualifiedCharacters.Any(characterClass => classSet.Contains(characterClass.Number)))
+            .ToList();
+        foreach (var definition in expectedDefinitions)
+        {
+            var item = storeItems.FirstOrDefault(item => item.Definition == definition);
+            Assert.That(item, Is.Not.Null, $"NPC {npcNumber}: {definition}");
+            Assert.Multiple(() =>
+            {
+                Assert.That(item!.Level, Is.EqualTo(7));
+                Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
+                Assert.That(item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck || link.ItemOption?.OptionType == ItemOptionTypes.Option), Is.False);
+                Assert.That(item.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent).ItemOption?.PowerUpDefinition?.TargetAttribute, Is.EqualTo(definition.Group >= 7 ? Stats.MaximumHealth : Stats.ExcellentDamageChance));
+                Assert.That(item.HasSkill, Is.EqualTo(item.CanHaveSkill()));
+            });
+        }
+    }
+
+    private void AssertSkillProfile(GameConfiguration configuration, short npcNumber, byte[] classes)
+    {
+        var classSet = classes.ToHashSet();
+        var storeItems = configuration.Monsters.Single(monster => monster.Number == npcNumber).MerchantStore!.Items;
+        var expectedDefinitions = configuration.Items.Where(item => item.Group is 12 or 15 && item.ItemSlot is null && item.Skill is not null && item.QualifiedCharacters.Any(characterClass => classSet.Contains(characterClass.Number)));
+        foreach (var definition in expectedDefinitions)
+        {
+            Assert.That(storeItems.Any(item => item.Definition == definition), Is.True, $"NPC {npcNumber}: {definition}");
+        }
+
+        if (classes.Contains((byte)8))
+        {
+            Assert.That(storeItems.Where(item => item.Definition is { Group: 12, Number: 11 }).Select(item => item.Level), Is.EquivalentTo(Enumerable.Range(0, 7).Select(level => (byte)level)));
+        }
     }
 
     private void AssertContinuousBossEvent<TPlugIn>(GameConfiguration configuration, TimeOnly firstStart)
@@ -128,12 +221,13 @@ internal class TestInitializationWithEfCore
         {
             Assert.That(plugIn.IsActive, Is.True);
             Assert.That(eventConfiguration, Is.Not.Null);
-            Assert.That(eventConfiguration!.TaskDuration, Is.EqualTo(TimeSpan.FromMinutes(8)));
+            Assert.That(eventConfiguration!.PreStartMessageDelay, Is.EqualTo(TimeSpan.Zero));
+            Assert.That(eventConfiguration.TaskDuration, Is.EqualTo(TimeSpan.FromMinutes(10)));
             Assert.That(eventConfiguration.Timetable.First(), Is.EqualTo(firstStart));
-            Assert.That(eventConfiguration.Timetable.Zip(eventConfiguration.Timetable.Skip(1), (first, second) => second - first).All(interval => interval == TimeSpan.FromMinutes(10)), Is.True);
-            Assert.That(eventConfiguration.Mobs.All(mob => mob.Count >= 2), Is.True);
+            Assert.That(eventConfiguration.Timetable.Zip(eventConfiguration.Timetable.Skip(1), (first, second) => second - first).All(interval => interval == TimeSpan.FromMinutes(30)), Is.True);
         });
     }
+
 
     /// <summary>
     /// Tests that the instant-server update repairs an existing Season 6 configuration.
@@ -153,6 +247,62 @@ internal class TestInitializationWithEfCore
             configuration.AreaSkillHitsPlayer = false;
             server.PvpEnabled = false;
             await new ConfigureInstantServerUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the completion update is idempotent and repairs persisted character point rates.
+    /// </summary>
+    [Test]
+    public async Task TestCompleteInstantServerUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        const int normalFreePoints = 1234;
+        const int heroFreePoints = 5678;
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var pointsDefinition = configuration.Attributes.Single(attribute => attribute.Id == Stats.PointsPerLevelUp.Id);
+            var heroDefinition = configuration.Attributes.Single(attribute => attribute.Id == Stats.GainHeroStatusQuestCompleted.Id);
+            var account = context.CreateNew<Account>();
+            account.LoginName = "instant-update";
+            var normal = context.CreateNew<Character>();
+            normal.Name = "Before117";
+            normal.LevelUpPoints = normalFreePoints;
+            normal.Attributes.Add(context.CreateNew<StatAttribute>(pointsDefinition, 5));
+            account.Characters.Add(normal);
+            var hero = context.CreateNew<Character>();
+            hero.Name = "Hero117";
+            hero.LevelUpPoints = heroFreePoints;
+            hero.Attributes.Add(context.CreateNew<StatAttribute>(pointsDefinition, 6));
+            hero.Attributes.Add(context.CreateNew<StatAttribute>(heroDefinition, 1));
+            account.Characters.Add(hero);
+
+            var update = new CompleteInstantServerUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var account = (await context.GetAsync<Account>().ConfigureAwait(false)).Single(item => item.LoginName == "instant-update");
+            var normal = account.Characters.Single(character => character.Name == "Before117");
+            var hero = account.Characters.Single(character => character.Name == "Hero117");
+            Assert.Multiple(() =>
+            {
+                Assert.That(normal.Attributes.Single(attribute => attribute.Definition == Stats.PointsPerLevelUp).Value, Is.EqualTo(500));
+                Assert.That(hero.Attributes.Single(attribute => attribute.Definition == Stats.PointsPerLevelUp).Value, Is.EqualTo(501));
+                Assert.That(normal.LevelUpPoints, Is.EqualTo(normalFreePoints));
+                Assert.That(hero.LevelUpPoints, Is.EqualTo(heroFreePoints));
+                Assert.That(configuration.DropItemGroups.Count(group => group.GetId() == new Guid(0x200, 9_999, 1, 0, 0, 0, 0, 0, 0, 0, 0)), Is.EqualTo(1));
+                Assert.That(configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems, Has.Exactly(1).Items);
+            });
         }
 
         await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);

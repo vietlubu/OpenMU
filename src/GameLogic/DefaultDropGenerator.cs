@@ -359,6 +359,7 @@ public class DefaultDropGenerator : IDropGenerator
         {
             SpecialItemType.Ancient => this.GenerateRandomAncient(),
             SpecialItemType.Excellent => this.GenerateRandomExcellentItem(possibleItems: possibleItems),
+            SpecialItemType.FullExcellent => this.GenerateFullExcellentItem(possibleItems: possibleItems),
             _ => this.GenerateRandomItem(possibleItems),
         };
 
@@ -386,6 +387,10 @@ public class DefaultDropGenerator : IDropGenerator
         }
 
         item.Level = Math.Min(item.Level, item.Definition!.MaximumItemLevel);
+        if (selectedGroup.ItemType == SpecialItemType.FullExcellent)
+        {
+            item.Durability = item.GetMaximumDurabilityOfOnePiece();
+        }
 
         return item;
     }
@@ -502,6 +507,60 @@ public class DefaultDropGenerator : IDropGenerator
         }
     }
 
+    private Item? GenerateFullExcellentItem(int monsterLevel = 0, ICollection<ItemDefinition>? possibleItems = null)
+    {
+        if (monsterLevel < this._excellentItemDropLevelDelta && possibleItems is null)
+        {
+            return null;
+        }
+
+        var possible = possibleItems ?? this.GetPossibleList(monsterLevel - this._excellentItemDropLevelDelta);
+        var item = this.GenerateRandomItem(possible);
+        if (item is null)
+        {
+            return null;
+        }
+
+        var supportedOptions = item.Definition!.PossibleItemOptions
+            .SelectMany(definition => definition.PossibleOptions)
+            .Distinct()
+            .ToList();
+        var excellentOptions = supportedOptions
+            .Where(option => option.OptionType == ItemOptionTypes.Excellent)
+            .ToList();
+        if (excellentOptions.Count == 0)
+        {
+            return null;
+        }
+
+        foreach (var option in excellentOptions.Where(option => item.ItemOptions.All(link => link.ItemOption != option)))
+        {
+            item.ItemOptions.Add(new ItemOptionLink { ItemOption = option });
+        }
+
+        if (supportedOptions.FirstOrDefault(option => option.OptionType == ItemOptionTypes.Luck) is { } luck
+            && item.ItemOptions.All(link => link.ItemOption != luck))
+        {
+            item.ItemOptions.Add(new ItemOptionLink { ItemOption = luck });
+        }
+
+        if (supportedOptions.FirstOrDefault(option => option.OptionType == ItemOptionTypes.Option) is { } normalOption)
+        {
+            if (item.ItemOptions.FirstOrDefault(link => link.ItemOption == normalOption) is { } normalOptionLink)
+            {
+                normalOptionLink.Level = 4;
+            }
+            else
+            {
+                item.ItemOptions.Add(new ItemOptionLink { ItemOption = normalOption, Level = 4 });
+            }
+        }
+
+        item.HasSkill = item.CanHaveSkill();
+        item.Durability = item.GetMaximumDurabilityOfOnePiece();
+        return item;
+    }
+
     private Item? GenerateItemDropOrMoney(MonsterDefinition monster, DropItemGroup selectedGroup, int gainedExperience, out uint? droppedMoney)
     {
         droppedMoney = null;
@@ -546,6 +605,7 @@ public class DefaultDropGenerator : IDropGenerator
         {
             SpecialItemType.Ancient => this.GenerateRandomAncient(),
             SpecialItemType.Excellent => this.GenerateRandomExcellentItem(monsterLevel),
+            SpecialItemType.FullExcellent => this.GenerateFullExcellentItem(monsterLevel),
             SpecialItemType.RandomItem => this.GenerateRandomItem(monsterLevel, false),
             SpecialItemType.SocketItem => this.GenerateRandomItem(monsterLevel, true),
             _ => null,

@@ -155,7 +155,7 @@ public class Potions : InitializerBase
         potion.DropsFromMonsters = true;
         potion.MaximumItemLevel = 1;
         potion.DropLevel = 40;
-        potion.Durability = 3;
+        potion.Durability = byte.MaxValue;
         potion.Value = 30;
         potion.Width = 1;
         potion.Height = 1;
@@ -218,7 +218,7 @@ public class Potions : InitializerBase
         potion.DropsFromMonsters = true;
         potion.MaximumItemLevel = 1;
         potion.DropLevel = 40;
-        potion.Durability = 3;
+        potion.Durability = byte.MaxValue;
         potion.Value = 30;
         potion.Width = 1;
         potion.Height = 1;

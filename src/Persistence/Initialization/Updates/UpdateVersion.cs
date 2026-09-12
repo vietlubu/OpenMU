@@ -589,4 +589,9 @@ public enum UpdateVersion
     /// The version of the <see cref="IncreaseInstantServerMoneyDropUpdatePlugIn"/>.
     /// </summary>
     IncreaseInstantServerMoneyDrop = 116,
+
+    /// <summary>
+    /// The version of the <see cref="CompleteInstantServerUpdatePlugIn"/>.
+    /// </summary>
+    CompleteInstantServer = 117,
 }

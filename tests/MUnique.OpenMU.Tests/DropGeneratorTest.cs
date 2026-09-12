@@ -5,10 +5,15 @@
 namespace MUnique.OpenMU.Tests;
 
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using MUnique.OpenMU.DataModel;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.Persistence;
+using MUnique.OpenMU.Persistence.InMemory;
+using MUnique.OpenMU.Persistence.Initialization.VersionSeasonSix;
 
 /// <summary>
 /// Tests the drop generator.
@@ -111,6 +116,81 @@ public class DropGeneratorTest
         Assert.That(config.ExcellentItemDropLevelDelta, Is.EqualTo(50));
     }
 
+    /// <summary>
+    /// Tests the x9999 gacha probabilities, reserved drop slot, and full-option jackpot contract.
+    /// </summary>
+    [Test]
+    public async Task TestInstantServerGachaAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        await new DataInitialization(contextProvider, new NullLoggerFactory()).CreateInitialDataAsync(1, false).ConfigureAwait(false);
+        using var context = contextProvider.CreateNewConfigurationContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var gachaGroups = Enumerable.Range(1, 6)
+            .Select(tier => configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, (short)tier, 0, 0, 0, 0, 0, 0, 0, 0)))
+            .ToList();
+
+        var regularRandomizer = this.GetSequenceRandomizer(0.005, 0.02, 0.04, 0.5);
+        var regularGenerator = new DefaultDropGenerator(configuration, regularRandomizer);
+        Assert.Multiple(() =>
+        {
+            Assert.That(regularGenerator.GenerateItemDrop(gachaGroups.Take(3)).Item?.Level, Is.EqualTo(10));
+            Assert.That(regularGenerator.GenerateItemDrop(gachaGroups.Take(3)).Item?.Level, Is.EqualTo(9));
+            Assert.That(regularGenerator.GenerateItemDrop(gachaGroups.Take(3)).Item?.Level, Is.EqualTo(8));
+            Assert.That(regularGenerator.GenerateItemDrop(gachaGroups.Take(3)).Item, Is.Null);
+        });
+
+        var bossRandomizer = this.GetSequenceRandomizer(0.01, 0.3, 0.7);
+        var bossGenerator = new DefaultDropGenerator(configuration, bossRandomizer);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bossGenerator.GenerateItemDrop(gachaGroups.Skip(3)).Item?.Definition?.Number, Is.EqualTo(52));
+            Assert.That(bossGenerator.GenerateItemDrop(gachaGroups.Skip(3)).Item?.Level, Is.EqualTo(11));
+            Assert.That(bossGenerator.GenerateItemDrop(gachaGroups.Skip(3)).Item?.Level, Is.EqualTo(12));
+        });
+
+        var jackpotOpening = configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems.Single();
+        var kundunFiveOpening = configuration.Items.Single(item => item is { Group: 14, Number: 11 }).DropItems.Single(group => group.SourceItemLevel == 12);
+        var itemGenerator = new DefaultDropGenerator(configuration, this.GetSequenceRandomizer());
+        var jackpot = itemGenerator.GenerateItemDrop(jackpotOpening);
+        var ordinaryExcellent = itemGenerator.GenerateItemDrop(kundunFiveOpening);
+        Assert.That(jackpot, Is.Not.Null);
+        Assert.That(ordinaryExcellent, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(jackpot!.Level, Is.EqualTo(13));
+            Assert.That(jackpot.ItemOptions.Where(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent).Select(link => link.ItemOption).Distinct().Count(), Is.EqualTo(6));
+            Assert.That(jackpot.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
+            Assert.That(jackpot.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4));
+            Assert.That(jackpot.HasSkill, Is.EqualTo(jackpot.CanHaveSkill()));
+            Assert.That(jackpot.Durability, Is.EqualTo(jackpot.GetMaximumDurabilityOfOnePiece()));
+            Assert.That(ordinaryExcellent!.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
+        });
+
+        var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);
+        player.CurrentMap!.Definition.DropItemGroups.Clear();
+        var monster = this.GetMonster(5, 100);
+        var guaranteedItem = this.CreateItemDefinition(14, 13, 76);
+        for (var index = 0; index < 4; index++)
+        {
+            var group = new Mock<DropItemGroup>();
+            group.SetupAllProperties();
+            group.Object.Chance = 1.0;
+            group.Object.ItemType = SpecialItemType.RandomItem;
+            group.Setup(item => item.PossibleItems).Returns(new List<ItemDefinition> { guaranteedItem });
+            monster.DropItemGroups.Add(group.Object);
+        }
+
+        monster.DropItemGroups.Add(gachaGroups[0]);
+        monster.DropItemGroups.Add(gachaGroups[1]);
+        monster.DropItemGroups.Add(gachaGroups[2]);
+        var (drops, _) = await new DefaultDropGenerator(configuration, this.GetSequenceRandomizer(0.0))
+            .GenerateItemDropsAsync(monster, 0, player)
+            .ConfigureAwait(false);
+        Assert.That(drops, Has.Exactly(5).Items);
+        Assert.That(drops.Any(item => item.Definition is { Group: 14, Number: 11 }), Is.True);
+    }
+
     private MonsterDefinition GetMonster(int numberOfDrops, byte level)
     {
         var monster = new Mock<MonsterDefinition>();
@@ -136,6 +216,26 @@ public class DropGeneratorTest
         randomizer.Setup(r => r.NextInt(It.IsAny<int>(), It.IsAny<int>())).Returns(integerValue);
         randomizer.Setup(r => r.NextDouble()).Returns(doubleValue);
 
+        return randomizer.Object;
+    }
+
+    private IRandomizer GetSequenceRandomizer(params double[] doubles)
+    {
+        var randomizer = new Mock<IRandomizer>();
+        randomizer.Setup(r => r.NextInt(It.IsAny<int>(), It.IsAny<int>())).Returns((int min, int _) => min);
+        randomizer.Setup(r => r.NextInt(It.IsAny<uint>(), It.IsAny<uint>())).Returns((uint min, uint _) => (int)min);
+        randomizer.Setup(r => r.NextUInt(It.IsAny<uint>(), It.IsAny<uint>())).Returns((uint min, uint _) => min);
+        randomizer.Setup(r => r.NextRandomBool()).Returns(false);
+        randomizer.Setup(r => r.NextRandomBool(It.IsAny<int>())).Returns(false);
+        randomizer.Setup(r => r.NextRandomBool(It.IsAny<int>(), It.IsAny<int>())).Returns(false);
+        randomizer.Setup(r => r.NextRandomBool(It.IsAny<double>())).Returns(false);
+        var sequence = randomizer.SetupSequence(r => r.NextDouble());
+        foreach (var value in doubles)
+        {
+            sequence = sequence.Returns(value);
+        }
+
+        sequence.Returns(0.0);
         return randomizer.Object;
     }
 

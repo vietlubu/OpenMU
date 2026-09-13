@@ -11,6 +11,7 @@ using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlayerActions.Craftings;
 using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.Persistence.Initialization.Items;
@@ -45,6 +46,16 @@ internal static class InstantServerConfiguration
     /// Gets the regular-monster jewel drop chance.
     /// </summary>
     internal const double JewelDropChance = 0.01;
+
+    /// <summary>
+    /// Gets the success rate of every wing and cape crafting.
+    /// </summary>
+    internal const byte WingCraftingSuccessRate = 90;
+
+    /// <summary>
+    /// Gets the independent chance for each supported special wing option.
+    /// </summary>
+    internal const byte WingSpecialOptionChance = 90;
 
     /// <summary>
     /// Gets the regular monster respawn delay.
@@ -89,6 +100,7 @@ internal static class InstantServerConfiguration
         ConfigureMerchantStores(context, gameConfiguration);
         ConfigureGacha(context, gameConfiguration);
         ConfigureGuaranteedLuck(context, gameConfiguration);
+        ConfigureWingCraftings(gameConfiguration);
     }
 
     /// <summary>
@@ -175,6 +187,54 @@ internal static class InstantServerConfiguration
         {
             group.ItemType = SpecialItemType.ExcellentWithLuck;
         }
+    }
+
+    /// <summary>
+    /// Configures all wing and cape mixes with fixed instant-server result rates and options.
+    /// </summary>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureWingCraftings(GameConfiguration gameConfiguration)
+    {
+        var craftings = gameConfiguration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings;
+        foreach (var crafting in craftings.Where(crafting => crafting.Number is 7 or 11 or 24 or 38 or 39))
+        {
+            crafting.ItemCraftingHandlerClassName = typeof(InstantServerWingCrafting).FullName!;
+            if (crafting.SimpleCraftingSettings is not { } settings)
+            {
+                continue;
+            }
+
+            settings.SuccessPercent = WingCraftingSuccessRate;
+            settings.MaximumSuccessPercent = WingCraftingSuccessRate;
+            settings.NpcPriceDivisor = 0;
+            settings.SuccessPercentageAdditionForLuck = 0;
+            settings.SuccessPercentageAdditionForExcellentItem = 0;
+            settings.SuccessPercentageAdditionForAncientItem = 0;
+            settings.SuccessPercentageAdditionForGuardianItem = 0;
+            settings.SuccessPercentageAdditionForSocketItem = 0;
+            settings.ResultItemLuckOptionChance = 100;
+            settings.ResultItemExcellentOptionChance = WingSpecialOptionChance;
+            settings.ResultItemMaxExcOptionCount = 4;
+            foreach (var requiredItem in settings.RequiredItems)
+            {
+                requiredItem.AddPercentage = 0;
+                requiredItem.NpcPriceDivisor = 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds Potion Girl Amy's store with the instant-server utility and crafting stock.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigurePotionGirlStore(IContext context, GameConfiguration gameConfiguration)
+    {
+        ConfigureSpecialistStore(context, gameConfiguration, 253, packer =>
+        {
+            AddGeneralGoods(context, gameConfiguration, packer);
+            AddClassChangeAndWingItems(context, gameConfiguration, packer);
+        });
     }
 
     private static void ConfigureBossEvent<TPlugIn>(GameConfiguration gameConfiguration, TimeSpan offset)
@@ -303,20 +363,6 @@ internal static class InstantServerConfiguration
         }
 
         ConfigurePotionGirlStore(context, gameConfiguration);
-    }
-
-    /// <summary>
-    /// Rebuilds Potion Girl Amy's store with the instant-server utility and crafting stock.
-    /// </summary>
-    /// <param name="context">The persistence context.</param>
-    /// <param name="gameConfiguration">The game configuration.</param>
-    internal static void ConfigurePotionGirlStore(IContext context, GameConfiguration gameConfiguration)
-    {
-        ConfigureSpecialistStore(context, gameConfiguration, 253, packer =>
-        {
-            AddGeneralGoods(context, gameConfiguration, packer);
-            AddClassChangeAndWingItems(context, gameConfiguration, packer);
-        });
     }
 
     private static void ConfigureSpecialistStore(IContext context, GameConfiguration gameConfiguration, short npcNumber, Action<MerchantStorePacker> populate)

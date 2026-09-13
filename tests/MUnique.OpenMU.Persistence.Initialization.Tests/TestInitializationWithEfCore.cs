@@ -12,6 +12,7 @@ using MUnique.OpenMU.DataModel.Configuration.Items;
 using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.Attributes;
+using MUnique.OpenMU.GameLogic.PlayerActions.Craftings;
 using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.PlugIns;
@@ -188,6 +189,23 @@ internal class TestInitializationWithEfCore
             Assert.That(jackpot.MaximumLevel, Is.EqualTo(13));
             Assert.That(jackpot.PossibleItems, Is.EquivalentTo(kundunBox.DropItems.Single(group => group.SourceItemLevel == 12).PossibleItems));
         });
+
+        var wingCraftings = configuration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings
+            .Where(crafting => crafting.Number is 7 or 11 or 24 or 38 or 39)
+            .ToList();
+        Assert.That(wingCraftings, Has.Count.EqualTo(5));
+        foreach (var crafting in wingCraftings)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(crafting.ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerWingCrafting).FullName));
+                Assert.That(crafting.SimpleCraftingSettings, Is.Not.Null);
+                Assert.That(crafting.SimpleCraftingSettings!.SuccessPercent, Is.EqualTo(90));
+                Assert.That(crafting.SimpleCraftingSettings.MaximumSuccessPercent, Is.EqualTo(90));
+                Assert.That(crafting.SimpleCraftingSettings.ResultItemLuckOptionChance, Is.EqualTo(100));
+                Assert.That(crafting.SimpleCraftingSettings.ResultItemExcellentOptionChance, Is.EqualTo(90));
+            });
+        }
 
         var gachaGroups = Enumerable.Range(1, 6)
             .Select(tier => configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, (short)tier, 0, 0, 0, 0, 0, 0, 0, 0)))
@@ -452,6 +470,34 @@ internal class TestInitializationWithEfCore
             var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
             configuration.Monsters.Single(monster => monster.Number == 253).MerchantStore!.Items.Clear();
             var update = new ExpandPotionGirlCraftingStockUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the instant wing-crafting update repairs existing settings idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestConfigureInstantWingCraftingUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, true).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var crafting = configuration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings.Single(item => item.Number == 39);
+            crafting.ItemCraftingHandlerClassName = typeof(ThirdWingsCrafting).FullName!;
+            crafting.SimpleCraftingSettings!.SuccessPercent = 1;
+            crafting.SimpleCraftingSettings.MaximumSuccessPercent = 40;
+            crafting.SimpleCraftingSettings.ResultItemLuckOptionChance = 5;
+            crafting.SimpleCraftingSettings.ResultItemExcellentOptionChance = 0;
+
+            var update = new ConfigureInstantWingCraftingUpdatePlugIn();
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         }

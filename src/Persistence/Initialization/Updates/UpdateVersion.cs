@@ -609,4 +609,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ExpandPotionGirlCraftingStockUpdatePlugIn"/>.
     /// </summary>
     ExpandPotionGirlCraftingStock = 120,
+
+    /// <summary>
+    /// The version of the <see cref="ConfigureInstantWingCraftingUpdatePlugIn"/>.
+    /// </summary>
+    ConfigureInstantWingCrafting = 121,
 }

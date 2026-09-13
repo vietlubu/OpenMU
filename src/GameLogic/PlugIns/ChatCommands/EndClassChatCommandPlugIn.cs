@@ -9,12 +9,12 @@ using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands.Arguments;
 using MUnique.OpenMU.PlugIns;
 
 /// <summary>
-/// A chat command plugin which changes the game master's character to its final class.
+/// A chat command plugin which changes a character to its final class.
 /// </summary>
 [Guid("7D5AC70D-1747-4DEE-AD6A-27BA57C2BC24")]
 [PlugIn]
 [Display(Name = "End class command", Description = "Changes your character to its final class and reconnects.")]
-[ChatCommandHelp(Command, typeof(EmptyChatCommandArgs), CharacterStatus.GameMaster)]
+[ChatCommandHelp(Command, typeof(EmptyChatCommandArgs), CharacterStatus.Normal)]
 public class EndClassChatCommandPlugIn : ChatCommandPlugInBase<EmptyChatCommandArgs>
 {
     private const string Command = "/endclass";
@@ -23,7 +23,7 @@ public class EndClassChatCommandPlugIn : ChatCommandPlugInBase<EmptyChatCommandA
     public override string Key => Command;
 
     /// <inheritdoc />
-    public override CharacterStatus MinCharacterStatusRequirement => CharacterStatus.GameMaster;
+    public override CharacterStatus MinCharacterStatusRequirement => CharacterStatus.Normal;
 
     /// <inheritdoc />
     protected override async ValueTask DoHandleCommandAsync(Player player, EmptyChatCommandArgs arguments)

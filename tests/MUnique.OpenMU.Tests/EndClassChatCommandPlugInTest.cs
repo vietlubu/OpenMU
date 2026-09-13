@@ -5,6 +5,7 @@
 namespace MUnique.OpenMU.Tests;
 
 using Moq;
+using MUnique.OpenMU.DataModel.Entities;
 using MUnique.OpenMU.DataModel.Configuration;
 using MUnique.OpenMU.GameLogic;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
@@ -15,6 +16,15 @@ using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
 [TestFixture]
 public class EndClassChatCommandPlugInTest
 {
+    /// <summary>
+    /// Verifies that every character may invoke the command.
+    /// </summary>
+    [Test]
+    public void AllowsRegularPlayers()
+    {
+        Assert.That(new EndClassChatCommandPlugIn().MinCharacterStatusRequirement, Is.EqualTo(CharacterStatus.Normal));
+    }
+
     /// <summary>
     /// Verifies that the command follows every class evolution and reconnects the player to rebuild its attributes.
     /// </summary>

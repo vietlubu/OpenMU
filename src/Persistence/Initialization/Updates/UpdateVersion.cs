@@ -634,4 +634,9 @@ public enum UpdateVersion
     /// The version of the <see cref="RebalanceInstantServerUpdatePlugIn"/>.
     /// </summary>
     RebalanceInstantServer = 125,
+
+    /// <summary>
+    /// The version of the <see cref="RestoreNormalServerUpdatePlugIn"/>.
+    /// </summary>
+    RestoreNormalServer = 126,
 }

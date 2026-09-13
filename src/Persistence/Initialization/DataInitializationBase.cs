@@ -267,6 +267,7 @@ public abstract class DataInitializationBase : IDataInitializationPlugIn
             server.ServerID = (byte)i;
             server.Description = $"Server {i}";
             server.ExperienceRate = 1.0f;
+            server.PvpEnabled = false;
             server.GameConfiguration = this.GameConfiguration;
             server.ServerConfiguration = gameServerConfiguration;
 

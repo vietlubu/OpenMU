@@ -210,7 +210,7 @@ public class Gates : InitializerBase
         targetGates.Add(270, this.CreateExitGate(maps[new(32, 7)], 62, 150, 70, 158, 0));
 
         // Icarus
-        targetGates.Add(63, this.CreateExitGate(maps[10], 53, 74, 56, 77, 5));
+        targetGates.Add(63, this.CreateExitGate(maps[10], 14, 13, 16, 13, 5));
 
         // Blood Castle
         targetGates.Add(66, this.CreateExitGate(maps[11], 12, 5, 14, 10, 0));

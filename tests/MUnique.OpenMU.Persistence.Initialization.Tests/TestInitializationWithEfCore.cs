@@ -16,6 +16,7 @@ using MUnique.OpenMU.GameLogic.PlayerActions.Craftings;
 using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.PlugIns;
+using MUnique.OpenMU.Pathfinding;
 using MUnique.OpenMU.Persistence.EntityFramework;
 using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
 using MUnique.OpenMU.Persistence.Initialization.Updates;
@@ -67,10 +68,10 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
-    /// Tests that the Icarus update restores client-matching terrain and a walkable arrival gate.
+    /// Tests that the normal-server update disables open PvP and restores standard Icarus.
     /// </summary>
     [Test]
-    public async Task FixIcarusTerrainUpdateRestoresClientTerrainAndWarpGateAsync()
+    public async Task RestoreNormalServerUpdateRepairsPvpAndIcarusAsync()
     {
         var contextProvider = new InMemoryPersistenceContextProvider();
         var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
@@ -80,28 +81,32 @@ internal class TestInitializationWithEfCore
         var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
         var icarus = configuration.Maps.Single(map => map.Number == IcarusMapNumber && map.Discriminator == 0);
         var gate = configuration.WarpList.Single(warp => warp.Index == 23).Gate!;
+        var server = (await context.GetAsync<GameServerDefinition>().ConfigureAwait(false)).Single();
         Array.Fill(icarus.TerrainData!, (byte)4, 3, ushort.MaxValue);
-        gate.X1 = 14;
-        gate.Y1 = 13;
-        gate.X2 = 16;
-        gate.Y2 = 13;
+        gate.X1 = 53;
+        gate.Y1 = 74;
+        gate.X2 = 56;
+        gate.Y2 = 77;
+        server.PvpEnabled = true;
 
-        var update = new FixIcarusTerrainUpdatePlugIn();
+        var update = new RestoreNormalServerUpdatePlugIn();
         await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
 
         var terrain = new GameMapTerrain(icarus);
-        Assert.That(terrain.WalkMap[14, 13], Is.False, "Icarus terrain must match the client terrain.");
-        for (var x = gate.X1; x <= gate.X2; x++)
+        var pathFinder = new PathFinder(new FullGridNetwork(true)) { SearchLimit = 10_000 };
+        var route = pathFinder.FindPath(new(14, 13), new(34, 238), terrain.AIgrid, false);
+        Assert.Multiple(() =>
         {
-            for (var y = gate.Y1; y <= gate.Y2; y++)
-            {
-                Assert.That(terrain.WalkMap[x, y], Is.True, $"Icarus warp tile ({x}, {y}) must be walkable.");
-            }
-        }
+            Assert.That((gate.X1, gate.Y1, gate.X2, gate.Y2), Is.EqualTo((14, 13, 16, 13)));
+            Assert.That(terrain.WalkMap[14, 13], Is.True);
+            Assert.That(terrain.WalkMap[16, 13], Is.True);
+            Assert.That(route, Is.Not.Null, "the arrival must connect to the far end of Icarus");
+            Assert.That(server.PvpEnabled, Is.False);
+        });
     }
 
-    private async Task AssertInstantServerConfigurationAsync(IPersistenceContextProvider contextProvider)
+    private async Task AssertInstantServerConfigurationAsync(IPersistenceContextProvider contextProvider, bool pvpEnabled = false)
     {
         using var context = contextProvider.CreateNewConfigurationContext();
         var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
@@ -132,7 +137,8 @@ internal class TestInitializationWithEfCore
             Assert.That(configuration.MaximumMasterLevel, Is.EqualTo(400));
             Assert.That(configuration.MasterExperienceRate, Is.EqualTo(1_000f));
             Assert.That(servers, Is.Not.Empty);
-            Assert.That(servers.All(server => server is { ExperienceRate: 1.0f, PvpEnabled: true }), Is.True);
+            Assert.That(servers.Select(server => server.ExperienceRate), Is.All.EqualTo(1.0f));
+            Assert.That(servers.Select(server => server.PvpEnabled), Is.All.EqualTo(pvpEnabled));
             Assert.That(configuration.CharacterClasses.SelectMany(characterClass => characterClass.StatAttributes).Where(attribute => attribute.Attribute == Stats.PointsPerLevelUp).All(attribute => attribute.BaseValue == 500f), Is.True);
             Assert.That(new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership }.All(stat => configuration.Attributes.Single(attribute => attribute == stat).MaximumValue == 32_767), Is.True);
             Assert.That(configuration.CharacterClasses.Where(characterClass => characterClass.IsMasterClass).SelectMany(characterClass => characterClass.BaseAttributeValues).Where(attribute => attribute.Definition == Stats.MasterPointsPerLevelUp).All(attribute => attribute.Value == 5f), Is.True);
@@ -471,11 +477,10 @@ internal class TestInitializationWithEfCore
             var server = (await context.GetAsync<GameServerDefinition>().ConfigureAwait(false)).Single();
             configuration.ExperienceRate = 1f;
             configuration.AreaSkillHitsPlayer = false;
-            server.PvpEnabled = false;
+            server.PvpEnabled = true;
             await new ConfigureInstantServerUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         }
-
-        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+        await this.AssertInstantServerConfigurationAsync(contextProvider, pvpEnabled: true).ConfigureAwait(false);
     }
 
     /// <summary>

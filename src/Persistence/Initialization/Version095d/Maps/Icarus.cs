@@ -50,12 +50,6 @@ internal class Icarus : BaseMapInitializer
     }
 
     /// <inheritdoc/>
-    protected override void AdditionalInitialization(GameMapDefinition mapDefinition)
-    {
-        mapDefinition.UpdateTerrainFromResources(terrainMapNumber: this.MapNumber);
-    }
-
-    /// <inheritdoc/>
     protected override IEnumerable<MonsterSpawnArea> CreateMonsterSpawns()
     {
         yield return this.CreateMonsterSpawn(100, this.NpcDictionary[70], 66, 68);

@@ -110,6 +110,10 @@ internal class TestInitializationWithEfCore
             .SelectMany(map => map.MonsterSpawns)
             .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
             .ToList();
+        var icarusSpawns = configuration.Maps.Single(map => map is { Number: 10, Discriminator: 0 }).MonsterSpawns
+            .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
+            .ToList();
+        var nonIcarusSpawns = permanentMonsterSpawns.Except(icarusSpawns).ToList();
         var monsters = configuration.Monsters.Where(monster => monster.ObjectKind == NpcObjectKind.Monster).ToList();
 
         foreach (var npcNumber in new short[] { 230, 242, 243, 245, 246, 251, 253, 254, 259, 376, 377, 415, 416, 417, 545, 577 })
@@ -134,12 +138,14 @@ internal class TestInitializationWithEfCore
             Assert.That(configuration.CharacterClasses.Where(characterClass => characterClass.IsMasterClass).SelectMany(characterClass => characterClass.BaseAttributeValues).Where(attribute => attribute.Definition == Stats.MasterPointsPerLevelUp).All(attribute => attribute.Value == 5f), Is.True);
             Assert.That(configuration.PlugInConfigurations.Single(configuration => configuration.TypeId == typeof(EndClassChatCommandPlugIn).GUID).IsActive, Is.True);
             Assert.That(permanentMonsterSpawns, Is.Not.Empty);
-            Assert.That(permanentMonsterSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
+            Assert.That(nonIcarusSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
+            Assert.That(icarusSpawns, Has.Count.EqualTo(64));
+            Assert.That(icarusSpawns.All(spawn => spawn.Quantity == 3), Is.True);
             Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops == 2 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
             Assert.That(configuration.MiniGameDefinitions.All(miniGame => miniGame.ArePlayerKillersAllowedToEnter), Is.True);
         });
 
-        Assert.That(configuration.Maps.SelectMany(map => map.DropItemGroups).All(group => group.ItemType == SpecialItemType.Money), Is.True);
+        Assert.That(configuration.Maps.Where(map => map.Number != 10).SelectMany(map => map.DropItemGroups).All(group => group.ItemType == SpecialItemType.Money), Is.True);
         Assert.That(configuration.Monsters.SelectMany(monster => monster.Quests).SelectMany(quest => quest.RequiredItems).Where(item => item.Item?.IsQuestItem == true).All(item => item.DropItemGroup is null), Is.True);
 
         this.AssertEquipmentProfile(configuration, 254, [0, 2, 3], 2, [(5, 0), (5, 2)]);
@@ -183,10 +189,22 @@ internal class TestInitializationWithEfCore
             var craftingItem = potionGirlItems.Single(item => item.Definition is { } definition && definition.Group == group && definition.Number == number);
             Assert.Multiple(() =>
             {
-                Assert.That(craftingItem.Level, Is.EqualTo(4));
-                Assert.That(craftingItem.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(1));
+                Assert.That(craftingItem.Level, Is.EqualTo(9));
+                Assert.That(craftingItem.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4));
                 Assert.That(craftingItem.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
             });
+        }
+
+        foreach (var shopItem in configuration.Monsters.SelectMany(monster => monster.MerchantStore?.Items ?? []))
+        {
+            if (shopItem.Definition?.PossibleItemOptions.SelectMany(options => options.PossibleOptions).Any(option => option.OptionType == ItemOptionTypes.Option) != true)
+            {
+                continue;
+            }
+
+            Assert.That(shopItem.Level, Is.EqualTo(9), $"{shopItem.Definition}");
+            Assert.That(shopItem.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Option), Is.EqualTo(1), $"{shopItem.Definition}");
+            Assert.That(shopItem.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4), $"{shopItem.Definition}");
         }
 
         foreach (var (group, number, level) in new (byte Group, short Number, byte Level)[]
@@ -215,9 +233,14 @@ internal class TestInitializationWithEfCore
         var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
         foreach (var level in Enumerable.Range(8, 5).Select(level => (byte)level))
         {
-            Assert.That(kundunBox.DropItems.Where(group => group.SourceItemLevel == level), Has.Exactly(1).Items);
-            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level), Has.Property(nameof(DropItemGroup.Chance)).EqualTo(1.0));
-            Assert.That(kundunBox.DropItems.Single(group => group.SourceItemLevel == level).ItemType, Is.EqualTo(SpecialItemType.ExcellentWithLuck));
+            var opening = kundunBox.DropItems.Single(group => group.SourceItemLevel == level);
+            Assert.That(opening.Chance, Is.EqualTo(1.0));
+            Assert.That(opening.ItemType, Is.EqualTo(level >= 11 ? SpecialItemType.FullExcellent : SpecialItemType.ExcellentWithLuck));
+            if (level >= 11)
+            {
+                Assert.That(opening.MinimumLevel, Is.EqualTo(9));
+                Assert.That(opening.MaximumLevel, Is.EqualTo(9));
+            }
         }
 
         var jackpot = configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems.Single();
@@ -225,24 +248,73 @@ internal class TestInitializationWithEfCore
         {
             Assert.That(jackpot.ItemType, Is.EqualTo(SpecialItemType.FullExcellent));
             Assert.That(jackpot.Chance, Is.EqualTo(1.0));
-            Assert.That(jackpot.MinimumLevel, Is.EqualTo(13));
-            Assert.That(jackpot.MaximumLevel, Is.EqualTo(13));
-            Assert.That(jackpot.PossibleItems, Is.EquivalentTo(kundunBox.DropItems.Single(group => group.SourceItemLevel == 12).PossibleItems));
+            Assert.That(jackpot.MinimumLevel, Is.EqualTo(9));
+            Assert.That(jackpot.MaximumLevel, Is.EqualTo(9));
+            Assert.That(jackpot.PossibleItems, Is.SupersetOf(kundunBox.DropItems.Single(group => group.SourceItemLevel == 12).PossibleItems));
         });
 
-        var wingCraftings = configuration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings
-            .Where(crafting => crafting.Number is 7 or 11 or 24 or 38 or 39)
-            .ToList();
-        Assert.That(wingCraftings, Has.Count.EqualTo(5));
-        foreach (var crafting in wingCraftings)
+        var kundunFourDirectItems = new (byte Group, short Number)[]
+        {
+            (0, 16), (0, 17), (0, 18), (0, 19), (0, 20), (0, 21), (0, 31), (0, 33), (0, 34),
+            (2, 11), (2, 12), (2, 13), (2, 15), (3, 10), (4, 16), (4, 17), (4, 18), (4, 19),
+            (4, 20), (5, 8), (5, 9), (5, 10), (5, 11), (5, 13), (5, 19), (6, 13), (6, 15), (6, 16),
+        };
+        var kundunFiveDirectItems = new (byte Group, short Number)[]
+        {
+            (0, 22), (0, 23), (0, 26), (0, 27), (0, 28), (0, 35), (2, 14), (4, 21), (5, 12),
+            (5, 19), (5, 20), (5, 30), (5, 31),
+        };
+        static IEnumerable<ItemDefinition> EquipmentPool(GameConfiguration config, (byte Group, short Number)[] directItems, short[] armorSets)
+            => directItems.Select(id => config.Items.Single(item => item.Group == id.Group && item.Number == id.Number))
+                .Concat(config.Items.Where(item => item.Group is >= 7 and <= 11 && armorSets.Contains(item.Number)))
+                .Distinct();
+
+        Assert.That(
+            kundunBox.DropItems.Single(group => group.SourceItemLevel == 11).PossibleItems,
+            Is.EquivalentTo(EquipmentPool(configuration, kundunFourDirectItems, [17, 21, 18, 22, 19, 24, 20, 23, 27, 28, 42, 44, 60, 61])));
+        Assert.That(
+            kundunBox.DropItems.Single(group => group.SourceItemLevel == 12).PossibleItems,
+            Is.EquivalentTo(EquipmentPool(configuration, kundunFiveDirectItems, [29, 30, 31, 32, 33, 43, 73])));
+        Assert.That(
+            jackpot.PossibleItems,
+            Is.EquivalentTo(EquipmentPool(configuration, kundunFiveDirectItems, [29, 30, 31, 32, 33, 43, 73, 45, 46, 47, 48, 49, 50, 51, 52, 53])));
+
+        foreach (var opening in new[] { kundunBox.DropItems.Single(group => group.SourceItemLevel == 11), kundunBox.DropItems.Single(group => group.SourceItemLevel == 12), jackpot })
+        {
+            Assert.That(opening.PossibleItems, Is.Not.Empty);
+            Assert.That(opening.PossibleItems.All(item => item.PossibleItemOptions.SelectMany(options => options.PossibleOptions).Any(option => option.OptionType == ItemOptionTypes.Excellent)), Is.True, opening.Description);
+            Assert.That(opening.PossibleItems.All(item => item.PossibleItemOptions.SelectMany(options => options.PossibleOptions).Any(option => option.OptionType == ItemOptionTypes.Luck)), Is.True, opening.Description);
+            Assert.That(opening.PossibleItems.All(item => item.PossibleItemOptions.SelectMany(options => options.PossibleOptions).Any(option => option.OptionType == ItemOptionTypes.Option)), Is.True, opening.Description);
+        }
+
+        var chaosCraftings = configuration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings.ToList();
+        Assert.That(chaosCraftings, Has.Count.EqualTo(29));
+        Assert.Multiple(() =>
+        {
+            Assert.That(chaosCraftings.Single(crafting => crafting.Number == 8).ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerBloodCastleTicketCrafting).FullName));
+            Assert.That(chaosCraftings.Single(crafting => crafting.Number == 2).ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerDevilSquareTicketCrafting).FullName));
+            Assert.That(chaosCraftings.Single(crafting => crafting.Number == 37).ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerIllusionTempleTicketCrafting).FullName));
+            Assert.That(chaosCraftings.Single(crafting => crafting.Number == 28).ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerFenrirUpgradeCrafting).FullName));
+        });
+
+        foreach (var crafting in chaosCraftings.Where(crafting => crafting.SimpleCraftingSettings is not null))
+        {
+            var settings = crafting.SimpleCraftingSettings!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(settings.SuccessPercent, Is.EqualTo(100), $"Crafting {crafting.Number}");
+                Assert.That(settings.MaximumSuccessPercent, Is.EqualTo(100), $"Crafting {crafting.Number}");
+                Assert.That(settings.NpcPriceDivisor, Is.Zero, $"Crafting {crafting.Number}");
+                Assert.That(settings.RequiredItems.All(item => item.AddPercentage == 0 && item.NpcPriceDivisor == 0), Is.True, $"Crafting {crafting.Number}");
+            });
+        }
+
+        foreach (var crafting in chaosCraftings.Where(crafting => crafting.Number is 7 or 11 or 24 or 38 or 39))
         {
             Assert.Multiple(() =>
             {
                 Assert.That(crafting.ItemCraftingHandlerClassName, Is.EqualTo(typeof(InstantServerWingCrafting).FullName));
-                Assert.That(crafting.SimpleCraftingSettings, Is.Not.Null);
-                Assert.That(crafting.SimpleCraftingSettings!.SuccessPercent, Is.EqualTo(90));
-                Assert.That(crafting.SimpleCraftingSettings.MaximumSuccessPercent, Is.EqualTo(90));
-                Assert.That(crafting.SimpleCraftingSettings.ResultItemLuckOptionChance, Is.EqualTo(100));
+                Assert.That(crafting.SimpleCraftingSettings!.ResultItemLuckOptionChance, Is.EqualTo(100));
                 Assert.That(crafting.SimpleCraftingSettings.ResultItemExcellentOptionChance, Is.EqualTo(90));
             });
         }
@@ -270,6 +342,57 @@ internal class TestInitializationWithEfCore
             Assert.That(monster.NumberOfMaximumItemDrops, Is.EqualTo(2));
         }
 
+        var icarusGroupId = new Guid(0x200, 9_999, 10, 4, 0, 0, 0, 0, 0, 0, 0);
+        var icarusGroup = configuration.DropItemGroups.Single(group => group.GetId() == icarusGroupId);
+        var icarusMap = configuration.Maps.Single(map => map is { Number: 10, Discriminator: 0 });
+        Assert.Multiple(() =>
+        {
+            Assert.That(icarusMap.DropItemGroups.Count(group => group.GetId() == icarusGroupId), Is.EqualTo(1));
+            Assert.That(icarusGroup.Chance, Is.EqualTo(0.05));
+            Assert.That(icarusGroup.ItemLevel, Is.EqualTo(11));
+            Assert.That(icarusGroup.PossibleItems.Single(), Is.SameAs(kundunBox));
+            Assert.That(monsters.SelectMany(monster => monster.DropItemGroups), Does.Not.Contain(icarusGroup));
+        });
+
+        var expectedIcarusStats = new (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[]
+        {
+            (69, 750_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+            (70, 950_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+            (71, 750_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+            (72, 2_050_000, 18_000, 24_000, 8_500, 20_700, 12_000),
+            (73, 1_450_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+            (74, 1_725_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+            (75, 2_500_000, 19_500, 24_000, 9_900, 24_000, 12_200),
+            (76, 3_650_000, 25_500, 28_800, 11_600, 25_200, 12_200),
+            (77, 4_750_000, 28_500, 30_000, 12_000, 27_000, 14_000),
+        };
+        foreach (var expected in expectedIcarusStats)
+        {
+            var monster = monsters.Single(item => item.Number == expected.Number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(monster[Stats.MaximumHealth], Is.EqualTo(expected.Health));
+                Assert.That(monster[Stats.MinimumPhysBaseDmg], Is.EqualTo(expected.MinimumDamage));
+                Assert.That(monster[Stats.MaximumPhysBaseDmg], Is.EqualTo(expected.MaximumDamage));
+                Assert.That(monster[Stats.DefenseBase], Is.EqualTo(expected.Defense));
+                Assert.That(monster[Stats.AttackRatePvm], Is.EqualTo(expected.AttackRate));
+                Assert.That(monster[Stats.DefenseRatePvm], Is.EqualTo(expected.DefenseRate));
+            });
+        }
+
+        foreach (var boss in monsters.Where(monster => bossNumbers.Contains(monster.Number)))
+        {
+            var tier = Math.Max(0, boss[Stats.Level] - 20);
+            Assert.Multiple(() =>
+            {
+                Assert.That(boss[Stats.MaximumHealth], Is.GreaterThanOrEqualTo(Math.Clamp(tier * 500_000, 4_000_000, 60_000_000)));
+                Assert.That(boss[Stats.MinimumPhysBaseDmg], Is.GreaterThanOrEqualTo(Math.Clamp(tier * 250, 8_000, 32_000)));
+                Assert.That(boss[Stats.DefenseBase], Is.GreaterThanOrEqualTo(Math.Clamp(tier * 300, 8_000, 30_000)));
+                Assert.That(boss[Stats.AttackRatePvm], Is.GreaterThanOrEqualTo(Math.Clamp(tier * 250, 12_000, 30_000)));
+                Assert.That(boss[Stats.DefenseRatePvm], Is.GreaterThanOrEqualTo(Math.Clamp(tier * 200, 10_000, 25_000)));
+            });
+        }
+
         this.AssertContinuousBossEvent<GoldenInvasionPlugIn>(configuration, TimeOnly.MinValue);
         this.AssertContinuousBossEvent<RedDragonInvasionPlugIn>(configuration, new TimeOnly(0, 10));
         this.AssertContinuousBossEvent<WhiteWizardInvasionPlugIn>(configuration, new TimeOnly(0, 20));
@@ -289,10 +412,10 @@ internal class TestInitializationWithEfCore
             Assert.That(item, Is.Not.Null, $"NPC {npcNumber}: {definition}");
             Assert.Multiple(() =>
             {
-                Assert.That(item!.Level, Is.EqualTo(7));
+                Assert.That(item!.Level, Is.EqualTo(9));
                 Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
                 Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
-                Assert.That(item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Option), Is.False);
+                Assert.That(item.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4));
                 Assert.That(item.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent).ItemOption?.PowerUpDefinition?.TargetAttribute, Is.EqualTo(definition.Group >= 7 ? Stats.MaximumHealth : Stats.ExcellentDamageChance));
                 Assert.That(item.HasSkill, Is.EqualTo(item.CanHaveSkill()));
             });
@@ -484,12 +607,54 @@ internal class TestInitializationWithEfCore
             }
 
             var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
-            foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
+            foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 10))
             {
                 group.ItemType = SpecialItemType.Excellent;
             }
 
             var update = new AddInstantServerLuckUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the gameplay rebalance repairs existing x9999 data idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestRebalanceInstantServerUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var chaosCraftings = configuration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings;
+            chaosCraftings.First(crafting => crafting.SimpleCraftingSettings is not null).SimpleCraftingSettings!.SuccessPercent = 5;
+            chaosCraftings.Single(crafting => crafting.Number == 8).ItemCraftingHandlerClassName = typeof(BloodCastleTicketCrafting).FullName!;
+
+            var shopItem = configuration.Monsters
+                .SelectMany(monster => monster.MerchantStore?.Items ?? [])
+                .First(item => item.ItemOptions.Any(link => link.ItemOption?.OptionType == ItemOptionTypes.Option));
+            shopItem.Level = 0;
+            shopItem.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level = 0;
+
+            var icarus = configuration.Maps.Single(map => map is { Number: 10, Discriminator: 0 });
+            icarus.MonsterSpawns.First(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster }).Quantity = 10;
+            configuration.Monsters.Single(monster => monster.Number == 69).Attributes.Single(attribute => attribute.AttributeDefinition == Stats.MaximumHealth).Value = 1;
+            var icarusGroup = configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, 10, 4, 0, 0, 0, 0, 0, 0, 0));
+            icarus.DropItemGroups.Remove(icarusGroup);
+
+            configuration.Monsters.Single(monster => monster.Number == 79).Attributes.Single(attribute => attribute.AttributeDefinition == Stats.MaximumHealth).Value = 1;
+            var kundunFour = configuration.Items.Single(item => item is { Group: 14, Number: 11 }).DropItems.Single(group => group.SourceItemLevel == 11);
+            kundunFour.ItemType = SpecialItemType.Excellent;
+            kundunFour.PossibleItems.Clear();
+
+            var update = new RebalanceInstantServerUpdatePlugIn();
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
             await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         }

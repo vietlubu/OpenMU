@@ -629,4 +629,9 @@ public enum UpdateVersion
     /// The version of the <see cref="FixIcarusTerrainUpdatePlugIn"/>.
     /// </summary>
     FixIcarusTerrain = 124,
+
+    /// <summary>
+    /// The version of the <see cref="RebalanceInstantServerUpdatePlugIn"/>.
+    /// </summary>
+    RebalanceInstantServer = 125,
 }

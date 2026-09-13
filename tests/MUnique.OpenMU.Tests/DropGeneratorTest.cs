@@ -149,24 +149,42 @@ public class DropGeneratorTest
             Assert.That(bossGenerator.GenerateItemDrop(gachaGroups.Skip(3)).Item?.Level, Is.EqualTo(12));
         });
 
+        var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+        var kundunFourOpening = kundunBox.DropItems.Single(group => group.SourceItemLevel == 11);
+        var kundunFiveOpening = kundunBox.DropItems.Single(group => group.SourceItemLevel == 12);
         var jackpotOpening = configuration.Items.Single(item => item is { Group: 14, Number: 52 }).DropItems.Single();
-        var kundunFiveOpening = configuration.Items.Single(item => item is { Group: 14, Number: 11 }).DropItems.Single(group => group.SourceItemLevel == 12);
         var itemGenerator = new DefaultDropGenerator(configuration, this.GetSequenceRandomizer());
+        var kundunFour = itemGenerator.GenerateItemDrop(kundunFourOpening);
+        var kundunFive = itemGenerator.GenerateItemDrop(kundunFiveOpening);
         var jackpot = itemGenerator.GenerateItemDrop(jackpotOpening);
-        var ordinaryExcellent = itemGenerator.GenerateItemDrop(kundunFiveOpening);
+        Assert.That(kundunFour, Is.Not.Null);
+        Assert.That(kundunFive, Is.Not.Null);
         Assert.That(jackpot, Is.Not.Null);
-        Assert.That(ordinaryExcellent, Is.Not.Null);
+        foreach (var item in new[] { kundunFour!, kundunFive!, jackpot! })
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(item.Level, Is.EqualTo(9));
+                Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.GreaterThan(0));
+                Assert.That(item.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
+                Assert.That(item.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4));
+                Assert.That(item.HasSkill, Is.EqualTo(item.CanHaveSkill()));
+                Assert.That(item.Durability, Is.EqualTo(item.GetMaximumDurabilityOfOnePiece()));
+            });
+        }
+
+        Assert.That(kundunFour!.Definition!.Group, Is.InRange((byte)0, (byte)11));
+        Assert.That(kundunFive!.Definition!.DropLevel, Is.GreaterThanOrEqualTo(80));
+        Assert.That(jackpotOpening.PossibleItems, Is.SupersetOf(kundunFiveOpening.PossibleItems));
+
+        var icarusDrop = configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, 10, 4, 0, 0, 0, 0, 0, 0, 0));
+        var icarusGenerator = new DefaultDropGenerator(configuration, this.GetSequenceRandomizer(0.04, 0.06));
         Assert.Multiple(() =>
         {
-            Assert.That(jackpot!.Level, Is.EqualTo(13));
-            Assert.That(jackpot.ItemOptions.Where(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent).Select(link => link.ItemOption).Distinct().Count(), Is.EqualTo(6));
-            Assert.That(jackpot.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
-            Assert.That(jackpot.ItemOptions.Single(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).Level, Is.EqualTo(4));
-            Assert.That(jackpot.HasSkill, Is.EqualTo(jackpot.CanHaveSkill()));
-            Assert.That(jackpot.Durability, Is.EqualTo(jackpot.GetMaximumDurabilityOfOnePiece()));
-            Assert.That(ordinaryExcellent!.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Excellent), Is.EqualTo(1));
-            Assert.That(ordinaryExcellent.ItemOptions.Count(link => link.ItemOption?.OptionType == ItemOptionTypes.Luck), Is.EqualTo(1));
-
+            var successfulDrop = icarusGenerator.GenerateItemDrop(new[] { icarusDrop }).Item;
+            Assert.That(successfulDrop?.Definition, Is.SameAs(kundunBox));
+            Assert.That(successfulDrop?.Level, Is.EqualTo(11));
+            Assert.That(icarusGenerator.GenerateItemDrop(new[] { icarusDrop }).Item, Is.Null);
         });
 
         var player = await PlayerTestHelper.CreatePlayerAsync().ConfigureAwait(false);

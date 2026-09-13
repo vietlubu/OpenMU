@@ -65,7 +65,7 @@ internal static class InstantServerConfiguration
     /// <summary>
     /// Gets the success rate of every wing and cape crafting.
     /// </summary>
-    internal const byte WingCraftingSuccessRate = 90;
+    internal const byte WingCraftingSuccessRate = 100;
 
     /// <summary>
     /// Gets the independent chance for each supported special wing option.
@@ -91,6 +91,33 @@ internal static class InstantServerConfiguration
         43, 44, 53, 54, 78, 79, 80, 81, 82, 83, 135, 161, 181, 189, 197, 267, 275, 295, 338, 361, 362, 363, 364, 440, 459,
     ];
 
+    private static readonly (byte Group, short Number)[] KundunFourDirectItems =
+    [
+        (0, 16), (0, 17), (0, 18), (0, 19), (0, 20), (0, 21), (0, 31), (0, 33), (0, 34),
+        (2, 11), (2, 12), (2, 13), (2, 15), (3, 10), (4, 16), (4, 17), (4, 18), (4, 19),
+        (4, 20), (5, 8), (5, 9), (5, 10), (5, 11), (5, 13), (5, 19), (6, 13), (6, 15), (6, 16),
+    ];
+    private static readonly short[] KundunFourArmorSets = [17, 21, 18, 22, 19, 24, 20, 23, 27, 28, 42, 44, 60, 61];
+    private static readonly (byte Group, short Number)[] KundunFiveDirectItems =
+    [
+        (0, 22), (0, 23), (0, 26), (0, 27), (0, 28), (0, 35), (2, 14), (4, 21), (5, 12),
+        (5, 19), (5, 20), (5, 30), (5, 31),
+    ];
+    private static readonly short[] KundunFiveArmorSets = [29, 30, 31, 32, 33, 43, 73];
+    private static readonly short[] GmGiftArmorSets = [29, 30, 31, 32, 33, 43, 73, 45, 46, 47, 48, 49, 50, 51, 52, 53];
+    private static readonly (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[] IcarusMonsterStats =
+    [
+        (69, 750_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+        (70, 950_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+        (71, 750_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+        (72, 2_050_000, 18_000, 24_000, 8_500, 20_700, 12_000),
+        (73, 1_450_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+        (74, 1_725_000, 18_000, 24_000, 8_000, 20_000, 12_000),
+        (75, 2_500_000, 19_500, 24_000, 9_900, 24_000, 12_200),
+        (76, 3_650_000, 25_500, 28_800, 11_600, 25_200, 12_200),
+        (77, 4_750_000, 28_500, 30_000, 12_000, 27_000, 14_000),
+    ];
+
     /// <summary>
     /// Gets the merchants whose stores are rebuilt by this configuration.
     /// </summary>
@@ -114,9 +141,7 @@ internal static class InstantServerConfiguration
         ConfigurePvp(gameConfiguration);
         ConfigurePotionStacks(gameConfiguration);
         ConfigureMerchantStores(context, gameConfiguration);
-        ConfigureGacha(context, gameConfiguration);
-        ConfigureGuaranteedLuck(context, gameConfiguration);
-        ConfigureWingCraftings(gameConfiguration);
+        ConfigureGameplayBalance(context, gameConfiguration);
     }
 
     /// <summary>
@@ -226,42 +251,55 @@ internal static class InstantServerConfiguration
         }
 
         var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
-        foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 12))
+        foreach (var group in kundunBox.DropItems.Where(group => group.SourceItemLevel is >= 8 and <= 10))
         {
             group.ItemType = SpecialItemType.ExcellentWithLuck;
         }
     }
 
     /// <summary>
-    /// Configures all wing and cape mixes with fixed instant-server result rates and options.
+    /// Configures every Chaos Machine mix with a fixed instant-server success rate.
     /// </summary>
     /// <param name="gameConfiguration">The game configuration.</param>
-    internal static void ConfigureWingCraftings(GameConfiguration gameConfiguration)
+    internal static void ConfigureChaosMachineCraftings(GameConfiguration gameConfiguration)
     {
         var craftings = gameConfiguration.Monsters.Single(monster => monster.NpcWindow == NpcWindow.ChaosMachine).ItemCraftings;
-        foreach (var crafting in craftings.Where(crafting => crafting.Number is 7 or 11 or 24 or 38 or 39))
+        foreach (var crafting in craftings)
         {
-            crafting.ItemCraftingHandlerClassName = typeof(InstantServerWingCrafting).FullName!;
+            crafting.ItemCraftingHandlerClassName = crafting.Number switch
+            {
+                8 => typeof(InstantServerBloodCastleTicketCrafting).FullName!,
+                2 => typeof(InstantServerDevilSquareTicketCrafting).FullName!,
+                37 => typeof(InstantServerIllusionTempleTicketCrafting).FullName!,
+                28 => typeof(InstantServerFenrirUpgradeCrafting).FullName!,
+                7 or 11 or 24 or 38 or 39 => typeof(InstantServerWingCrafting).FullName!,
+                _ => crafting.ItemCraftingHandlerClassName,
+            };
+
             if (crafting.SimpleCraftingSettings is not { } settings)
             {
                 continue;
             }
 
-            settings.SuccessPercent = WingCraftingSuccessRate;
-            settings.MaximumSuccessPercent = WingCraftingSuccessRate;
+            settings.SuccessPercent = 100;
+            settings.MaximumSuccessPercent = 100;
             settings.NpcPriceDivisor = 0;
             settings.SuccessPercentageAdditionForLuck = 0;
             settings.SuccessPercentageAdditionForExcellentItem = 0;
             settings.SuccessPercentageAdditionForAncientItem = 0;
             settings.SuccessPercentageAdditionForGuardianItem = 0;
             settings.SuccessPercentageAdditionForSocketItem = 0;
-            settings.ResultItemLuckOptionChance = 100;
-            settings.ResultItemExcellentOptionChance = WingSpecialOptionChance;
-            settings.ResultItemMaxExcOptionCount = 4;
             foreach (var requiredItem in settings.RequiredItems)
             {
                 requiredItem.AddPercentage = 0;
                 requiredItem.NpcPriceDivisor = 0;
+            }
+
+            if (crafting.Number is 7 or 11 or 24 or 38 or 39)
+            {
+                settings.ResultItemLuckOptionChance = 100;
+                settings.ResultItemExcellentOptionChance = WingSpecialOptionChance;
+                settings.ResultItemMaxExcOptionCount = 4;
             }
         }
     }
@@ -278,6 +316,127 @@ internal static class InstantServerConfiguration
             AddGeneralGoods(context, gameConfiguration, packer);
             AddClassChangeAndWingItems(context, gameConfiguration, packer);
         });
+    }
+
+    /// <summary>
+    /// Applies the x9999 crafting, equipment, loot, and monster balance settings.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureGameplayBalance(IContext context, GameConfiguration gameConfiguration)
+    {
+        ConfigureGacha(context, gameConfiguration);
+        ConfigureGuaranteedLuck(context, gameConfiguration);
+        ConfigureChaosMachineCraftings(gameConfiguration);
+        ConfigureShopEquipment(context, gameConfiguration);
+        ConfigureIcarusBoxDrop(context, gameConfiguration);
+        ConfigureIcarusDifficulty(gameConfiguration);
+        ConfigureBossDifficulty(gameConfiguration);
+    }
+
+    private static void ConfigureShopEquipment(IContext context, GameConfiguration gameConfiguration)
+    {
+        foreach (var item in gameConfiguration.Monsters.SelectMany(monster => monster.MerchantStore?.Items ?? []))
+        {
+            var option = item.Definition?.PossibleItemOptions
+                .SelectMany(definition => definition.PossibleOptions)
+                .FirstOrDefault(possibleOption => possibleOption.OptionType == ItemOptionTypes.Option);
+            if (option is null)
+            {
+                continue;
+            }
+
+            item.Level = 9;
+            var links = item.ItemOptions.Where(link => link.ItemOption?.OptionType == ItemOptionTypes.Option).ToList();
+            var link = links.FirstOrDefault();
+            if (link is null)
+            {
+                link = context.CreateNew<ItemOptionLink>();
+                link.ItemOption = option;
+                item.ItemOptions.Add(link);
+            }
+
+            link.Level = 4;
+            foreach (var duplicate in links.Skip(1))
+            {
+                item.ItemOptions.Remove(duplicate);
+            }
+        }
+    }
+
+    private static void ConfigureIcarusBoxDrop(IContext context, GameConfiguration gameConfiguration)
+    {
+        var id = GuidHelper.CreateGuid<DropItemGroup>(9_999, 10, 4);
+        var group = gameConfiguration.DropItemGroups.FirstOrDefault(item => item.GetId() == id);
+        if (group is null)
+        {
+            group = context.CreateNew<DropItemGroup>();
+            group.SetGuid(id);
+            gameConfiguration.DropItemGroups.Add(group);
+        }
+
+        group.Description = "Icarus Box of Kundun +4";
+        group.Chance = 0.05;
+        group.ItemType = SpecialItemType.RandomItem;
+        group.ItemLevel = 11;
+        group.MinimumMonsterLevel = null;
+        group.MaximumMonsterLevel = null;
+        group.Monster = null;
+        group.PossibleItems.Clear();
+        group.PossibleItems.Add(GetItemDefinition(gameConfiguration, 14, 11));
+
+        var icarus = gameConfiguration.Maps.Single(map => map is { Number: 10, Discriminator: 0 });
+        if (!icarus.DropItemGroups.Contains(group))
+        {
+            icarus.DropItemGroups.Add(group);
+        }
+    }
+
+    private static void ConfigureIcarusDifficulty(GameConfiguration gameConfiguration)
+    {
+        var icarus = gameConfiguration.Maps.Single(map => map is { Number: 10, Discriminator: 0 });
+        foreach (var spawn in icarus.MonsterSpawns.Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster }))
+        {
+            spawn.Quantity = 3;
+        }
+
+        foreach (var stats in IcarusMonsterStats)
+        {
+            var monster = gameConfiguration.Monsters.Single(monster => monster.Number == stats.Number);
+            SetMonsterAttribute(monster, Stats.MaximumHealth, stats.Health);
+            SetMonsterAttribute(monster, Stats.MinimumPhysBaseDmg, stats.MinimumDamage);
+            SetMonsterAttribute(monster, Stats.MaximumPhysBaseDmg, stats.MaximumDamage);
+            SetMonsterAttribute(monster, Stats.DefenseBase, stats.Defense);
+            SetMonsterAttribute(monster, Stats.AttackRatePvm, stats.AttackRate);
+            SetMonsterAttribute(monster, Stats.DefenseRatePvm, stats.DefenseRate);
+        }
+    }
+
+    private static void ConfigureBossDifficulty(GameConfiguration gameConfiguration)
+    {
+        foreach (var boss in gameConfiguration.Monsters.Where(monster => BossMonsterNumbers.Contains(monster.Number)))
+        {
+            var tier = Math.Max(0, GetMonsterAttribute(boss, Stats.Level) - 20);
+            var minimumDamage = Math.Clamp(tier * 250, 8_000, 32_000);
+            SetMonsterAttributeAtLeast(boss, Stats.MaximumHealth, Math.Clamp(tier * 500_000, 4_000_000, 60_000_000));
+            SetMonsterAttributeAtLeast(boss, Stats.MinimumPhysBaseDmg, minimumDamage);
+            SetMonsterAttributeAtLeast(boss, Stats.MaximumPhysBaseDmg, Math.Max(minimumDamage + 6_000, GetMonsterAttribute(boss, Stats.MinimumPhysBaseDmg) + 1));
+            SetMonsterAttributeAtLeast(boss, Stats.DefenseBase, Math.Clamp(tier * 300, 8_000, 30_000));
+            SetMonsterAttributeAtLeast(boss, Stats.AttackRatePvm, Math.Clamp(tier * 250, 12_000, 30_000));
+            SetMonsterAttributeAtLeast(boss, Stats.DefenseRatePvm, Math.Clamp(tier * 200, 10_000, 25_000));
+        }
+    }
+
+    private static float GetMonsterAttribute(MonsterDefinition monster, AttributeDefinition definition)
+        => monster.Attributes.Single(attribute => attribute.AttributeDefinition?.Id == definition.Id).Value;
+
+    private static void SetMonsterAttribute(MonsterDefinition monster, AttributeDefinition definition, float value)
+        => monster.Attributes.Single(attribute => attribute.AttributeDefinition?.Id == definition.Id).Value = value;
+
+    private static void SetMonsterAttributeAtLeast(MonsterDefinition monster, AttributeDefinition definition, float value)
+    {
+        var attribute = monster.Attributes.Single(item => item.AttributeDefinition?.Id == definition.Id);
+        attribute.Value = Math.Max(attribute.Value, value);
     }
 
     private static void ConfigureBossEvent<TPlugIn>(GameConfiguration gameConfiguration, TimeSpan offset)
@@ -584,7 +743,8 @@ internal static class InstantServerConfiguration
         var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
         foreach (var level in Enumerable.Range(8, 5).Select(level => (byte)level))
         {
-            var excellentGroup = kundunBox.DropItems.Single(group => group.SourceItemLevel == level && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck);
+            var excellentGroup = kundunBox.DropItems.FirstOrDefault(group => group.SourceItemLevel == level && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck or SpecialItemType.FullExcellent)
+                                 ?? kundunBox.DropItems.Single(group => group.SourceItemLevel == level);
             excellentGroup.Chance = 1.0;
             foreach (var obsolete in kundunBox.DropItems.Where(group => group.SourceItemLevel == level && group != excellentGroup).ToList())
             {
@@ -592,7 +752,11 @@ internal static class InstantServerConfiguration
             }
         }
 
-        ConfigureJackpotOpening(context, gameConfiguration, kundunBox);
+        var kundunFourOpening = kundunBox.DropItems.Single(group => group.SourceItemLevel == 11);
+        ConfigureFullOptionOpening(gameConfiguration, kundunFourOpening, KundunFourDirectItems, KundunFourArmorSets);
+        var kundunFiveOpening = kundunBox.DropItems.Single(group => group.SourceItemLevel == 12);
+        ConfigureFullOptionOpening(gameConfiguration, kundunFiveOpening, KundunFiveDirectItems, KundunFiveArmorSets);
+        ConfigureJackpotOpening(context, gameConfiguration);
         RemoveLegacyKundunMonsterDrops(gameConfiguration, kundunBox);
 
         var kundunOne = UpsertGachaGroup(context, gameConfiguration, 1, "Kundun +1 Gacha", 0.02, kundunBox, 8);
@@ -605,7 +769,6 @@ internal static class InstantServerConfiguration
         var jewelGroup = gameConfiguration.DropItemGroups.Single(group => group.GetId() == GuidHelper.CreateGuid<DropItemGroup>(4));
 
         var configuredGroups = new[] { kundunOne, kundunTwo, kundunThree, kundunFour, kundunFive, jackpot };
-
         foreach (var monster in gameConfiguration.Monsters)
         {
             foreach (var group in configuredGroups)
@@ -645,7 +808,7 @@ internal static class InstantServerConfiguration
         }
     }
 
-    private static void ConfigureJackpotOpening(IContext context, GameConfiguration gameConfiguration, ItemDefinition kundunBox)
+    private static void ConfigureJackpotOpening(IContext context, GameConfiguration gameConfiguration)
     {
         var gift = GetItemDefinition(gameConfiguration, 14, 52);
         var jackpotId = GuidHelper.CreateGuid<ItemDropItemGroup>(gift.Group, gift.Number, 0);
@@ -660,14 +823,41 @@ internal static class InstantServerConfiguration
         jackpot.SourceItemLevel = 0;
         jackpot.ItemType = SpecialItemType.FullExcellent;
         jackpot.Chance = 1.0;
-        jackpot.MinimumLevel = 13;
-        jackpot.MaximumLevel = 13;
+        jackpot.MinimumLevel = 9;
+        jackpot.MaximumLevel = 9;
         jackpot.Description = "Full Option Gacha Box (GM Gift)";
         jackpot.DropEffect = ItemDropEffect.FanfareSound;
-        jackpot.PossibleItems.Clear();
-        foreach (var item in kundunBox.DropItems.Single(group => group.SourceItemLevel == 12 && group.ItemType is SpecialItemType.Excellent or SpecialItemType.ExcellentWithLuck).PossibleItems)
+        ReplaceEquipmentPool(gameConfiguration, jackpot, KundunFiveDirectItems, GmGiftArmorSets);
+    }
+
+    private static void ConfigureFullOptionOpening(
+        GameConfiguration gameConfiguration,
+        ItemDropItemGroup group,
+        IReadOnlyCollection<(byte Group, short Number)> directItems,
+        IReadOnlyCollection<short> armorSets)
+    {
+        group.ItemType = SpecialItemType.FullExcellent;
+        group.Chance = 1.0;
+        group.MinimumLevel = 9;
+        group.MaximumLevel = 9;
+        ReplaceEquipmentPool(gameConfiguration, group, directItems, armorSets);
+    }
+
+    private static void ReplaceEquipmentPool(
+        GameConfiguration gameConfiguration,
+        DropItemGroup group,
+        IReadOnlyCollection<(byte Group, short Number)> directItems,
+        IReadOnlyCollection<short> armorSets)
+    {
+        var items = directItems
+            .Select(item => GetItemDefinition(gameConfiguration, item.Group, item.Number))
+            .Concat(gameConfiguration.Items.Where(item => item.Group is >= 7 and <= 11 && armorSets.Contains(item.Number)))
+            .Distinct()
+            .ToList();
+        group.PossibleItems.Clear();
+        foreach (var item in items)
         {
-            jackpot.PossibleItems.Add(item);
+            group.PossibleItems.Add(item);
         }
     }
 

@@ -1753,12 +1753,6 @@
   <data name="GameMapDefinition_ExpMultiplier_Description" xml:space="preserve">
     <value></value>
   </data>
-  <data name="GameMapDefinition_GrantsMasterExperience_Caption" xml:space="preserve">
-    <value>Grants Master Experience</value>
-  </data>
-  <data name="GameMapDefinition_GrantsMasterExperience_Description" xml:space="preserve">
-    <value>Allows monsters on this map to grant master experience regardless of their level.</value>
-  </data>
   <data name="GameMapDefinition_Discriminator_Caption" xml:space="preserve">
     <value>Discriminator</value>
   </data>

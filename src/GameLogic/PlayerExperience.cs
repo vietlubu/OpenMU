@@ -157,9 +157,7 @@ internal sealed class PlayerExperience
             return;
         }
 
-        if (killedObject is not null
-            && killedObject.CurrentMap?.Definition.GrantsMasterExperience != true
-            && killedObject.Attributes[Stats.Level] < player.GameContext.Configuration.MinimumMonsterLevelForMasterExperience)
+        if (killedObject is not null && killedObject.Attributes[Stats.Level] < player.GameContext.Configuration.MinimumMonsterLevelForMasterExperience)
         {
             await player.InvokeViewPlugInAsync<IAddExperiencePlugIn>(p => p.AddExperienceAsync(0, killedObject, ExperienceType.MonsterLevelTooLowForMasterExperience)).ConfigureAwait(false);
             return;

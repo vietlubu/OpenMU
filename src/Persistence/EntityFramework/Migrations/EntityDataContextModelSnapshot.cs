@@ -1577,9 +1577,6 @@ namespace MUnique.OpenMU.Persistence.EntityFramework.Migrations
                     b.Property<double>("ExpMultiplier")
                         .HasColumnType("double precision");
 
-                    b.Property<bool>("GrantsMasterExperience")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid?>("GameConfigurationId")
                         .HasColumnType("uuid");
 

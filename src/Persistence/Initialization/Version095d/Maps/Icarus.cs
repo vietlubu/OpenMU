@@ -53,7 +53,6 @@ internal class Icarus : BaseMapInitializer
     protected override void AdditionalInitialization(GameMapDefinition mapDefinition)
     {
         mapDefinition.UpdateTerrainFromResources(terrainMapNumber: this.MapNumber);
-        mapDefinition.GrantsMasterExperience = true;
     }
 
     /// <inheritdoc/>

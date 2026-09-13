@@ -619,4 +619,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ConfigureMasterProgressionUpdatePlugIn"/>.
     /// </summary>
     ConfigureMasterProgression = 122,
+
+    /// <summary>
+    /// The version of the <see cref="SyncLorenciaTerrainUpdatePlugIn"/>.
+    /// </summary>
+    SyncLorenciaTerrain = 123,
 }

@@ -19,10 +19,11 @@ internal static class TerrainUpdateHelper
     /// </summary>
     /// <param name="gameMapDefinition">The game map definition.</param>
     /// <param name="terrainVersionPrefix">The terrain version prefix.</param>
-    public static void UpdateTerrainFromResources(this GameMapDefinition gameMapDefinition, string terrainVersionPrefix = "")
+    /// <param name="terrainMapNumber">The terrain resource map number, or <see langword="null"/> to use the configuration map number plus one.</param>
+    public static void UpdateTerrainFromResources(this GameMapDefinition gameMapDefinition, string terrainVersionPrefix = "", short? terrainMapNumber = null)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        var terrainResourceName = gameMapDefinition.GetTerrainFileName(terrainVersionPrefix);
+        var terrainResourceName = gameMapDefinition.GetTerrainFileName(terrainVersionPrefix, terrainMapNumber ?? (short)(gameMapDefinition.Number + 1));
         if (string.IsNullOrWhiteSpace(terrainResourceName))
         {
             return;
@@ -41,11 +42,11 @@ internal static class TerrainUpdateHelper
         }
     }
 
-    private static string GetTerrainFileName(this GameMapDefinition gameMapDefinition, string terrainVersionPrefix = "")
+    private static string GetTerrainFileName(this GameMapDefinition gameMapDefinition, string terrainVersionPrefix, short terrainMapNumber)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var resourceNames = assembly.GetManifestResourceNames();
-        for (var mapNumber = gameMapDefinition.Number + 1; mapNumber > 0 && mapNumber > gameMapDefinition.Number - 10; mapNumber--)
+        for (var mapNumber = terrainMapNumber; mapNumber > 0 && mapNumber > terrainMapNumber - 10; mapNumber--)
         {
             var candidate = $"{assembly.GetName().Name}.Resources.{terrainVersionPrefix}Terrain{mapNumber}{(gameMapDefinition.Discriminator > 0 ? ("_" + gameMapDefinition.Discriminator) : string.Empty)}.att";
             if (resourceNames.Contains(candidate))

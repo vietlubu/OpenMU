@@ -66,6 +66,41 @@ internal class TestInitializationWithEfCore
         await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Tests that the Icarus update restores client-matching terrain and a walkable arrival gate.
+    /// </summary>
+    [Test]
+    public async Task FixIcarusTerrainUpdateRestoresClientTerrainAndWarpGateAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, true).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var icarus = configuration.Maps.Single(map => map.Number == IcarusMapNumber && map.Discriminator == 0);
+        var gate = configuration.WarpList.Single(warp => warp.Index == 23).Gate!;
+        Array.Fill(icarus.TerrainData!, (byte)4, 3, ushort.MaxValue);
+        gate.X1 = 14;
+        gate.Y1 = 13;
+        gate.X2 = 16;
+        gate.Y2 = 13;
+
+        var update = new FixIcarusTerrainUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var terrain = new GameMapTerrain(icarus);
+        Assert.That(terrain.WalkMap[14, 13], Is.False, "Icarus terrain must match the client terrain.");
+        for (var x = gate.X1; x <= gate.X2; x++)
+        {
+            for (var y = gate.Y1; y <= gate.Y2; y++)
+            {
+                Assert.That(terrain.WalkMap[x, y], Is.True, $"Icarus warp tile ({x}, {y}) must be walkable.");
+            }
+        }
+    }
+
     private async Task AssertInstantServerConfigurationAsync(IPersistenceContextProvider contextProvider)
     {
         using var context = contextProvider.CreateNewConfigurationContext();

@@ -132,6 +132,71 @@ Riêng **Potion Girl Amy (253)** còn bán:
 
 Các NPC áp dụng gồm Potion Girl Amy, Oracle Layla, Pamela, Angela, Silvia, Christine và Leina. Các shop barmaid, vé event và NPC crafting khác vẫn giữ nội dung Season 6 gốc.
 
+### Công thức chế tạo Wings
+
+Thực hiện tại **Chaos Goblin/Chaos Machine**. Kết quả cánh hoặc cape được chọn ngẫu nhiên trong nhóm của công thức; Luck và option kết quả vẫn phụ thuộc tỷ lệ của Chaos Mix.
+
+#### Wings cấp 1
+
+| Nguyên liệu | Yêu cầu |
+| --- | --- |
+| Chaos Weapon | 1 Chaos Dragon Axe, Chaos Nature Bow hoặc Chaos Lightning Staff, tối thiểu **+4 +4 option** |
+| Jewel of Chaos | 1 viên |
+| Trang bị thường bổ sung | Không bắt buộc; tối thiểu **+4 +4 option**, dùng để tăng tỷ lệ thành công |
+| Jewel of Bless/Soul | Không bắt buộc; dùng để tăng tỷ lệ thành công |
+
+Potion Girl bán sẵn ba Chaos Weapon **+4 +4 option có Luck**, nên có thể mua một món rồi đưa thẳng vào Chaos Machine. Kết quả ngẫu nhiên: Wings of Fairy, Wings of Heaven, Wings of Satan hoặc Wings of Misery.
+
+#### Wings cấp 2
+
+| Nguyên liệu | Yêu cầu |
+| --- | --- |
+| Wings cấp 1 | 1 cánh, từ +0 trở lên |
+| Loch's Feather | 1 cái |
+| Jewel of Chaos | 1 viên |
+| Trang bị Excellent bổ sung | Không bắt buộc; tối thiểu +4, dùng để tăng tỷ lệ thành công |
+
+Chi phí cơ bản **5.000.000 Zen**, tỷ lệ thành công tối đa **90%**. Kết quả ngẫu nhiên: Wings of Spirit, Wings of Soul, Wings of Dragon, Wings of Darkness hoặc Wings of Despair.
+
+#### Cape of Lord hoặc Cape of Fighter
+
+| Nguyên liệu | Yêu cầu |
+| --- | --- |
+| Wings cấp 1 | 1 cánh, từ +0 trở lên |
+| Monarch's Crest | 1 **Loch's Feather +1** |
+| Jewel of Chaos | 1 viên |
+| Trang bị Excellent bổ sung | Không bắt buộc; tối thiểu +4, dùng để tăng tỷ lệ thành công |
+
+Chi phí cơ bản **5.000.000 Zen**, tỷ lệ thành công tối đa **90%**. Chaos Machine chọn ngẫu nhiên Cape of Lord hoặc Cape of Fighter.
+
+#### Wings cấp 3 — bước 1: tạo Feather of Condor
+
+| Nguyên liệu | Yêu cầu |
+| --- | --- |
+| Wings cấp 2 hoặc cape | 1 món **+9 trở lên, có option** |
+| Trang bị Ancient | 1 món **+7 trở lên, có option** |
+| Jewel of Chaos | 1 viên |
+| Jewel of Creation | 1 viên |
+| Packed Jewel of Soul | 1 pack 10 viên, tức Packed Soul +0 |
+
+Tỷ lệ thành công tối đa **60%**. Kết quả là **Feather of Condor**. Vì Potion Girl cũng bán sẵn Feather of Condor, có thể bỏ qua bước này nếu chỉ muốn chế tạo nhanh.
+
+#### Wings cấp 3 — bước 2
+
+| Nguyên liệu | Yêu cầu |
+| --- | --- |
+| Trang bị Excellent | 1 món **+9 trở lên, có option** |
+| Feather of Condor | 1 cái |
+| Flame of Condor | 1 cái |
+| Jewel of Chaos | 1 viên |
+| Jewel of Creation | 1 viên |
+| Packed Jewel of Bless | 1 pack 10 viên, tức Packed Bless +0 |
+| Packed Jewel of Soul | 1 pack 10 viên, tức Packed Soul +0 |
+
+Tỷ lệ thành công tối đa **40%**. Kết quả ngẫu nhiên: Wings of Storm, Wings of Eternal, Wings of Illusion, Wings of Ruin, Cape of Emperor, Wings of Dimension hoặc Cape of Overrule.
+
+> **Lưu ý:** Packed Jewel +0/+1/+2 lần lượt đại diện cho pack **10/20/30 viên**. Công thức Wings cấp 3 chỉ yêu cầu pack 10 viên, vì vậy hãy mua bản **+0**.
+
 ## 6. Trang bị Excellent trong shop
 
 Đồ shop là bộ khởi đầu, không phải đồ cuối game:

@@ -65,6 +65,11 @@ public partial class GameMapDefinition
     public double ExpMultiplier { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether monsters on this map grant master experience regardless of their level.
+    /// </summary>
+    public bool GrantsMasterExperience { get; set; }
+
+    /// <summary>
     /// Gets or sets the discriminator which allows to identify different map definitions with the same <see cref="Number"/>.
     /// </summary>
     public int Discriminator { get; set; }

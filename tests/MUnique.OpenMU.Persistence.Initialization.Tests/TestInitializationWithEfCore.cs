@@ -110,7 +110,8 @@ internal class TestInitializationWithEfCore
             .SelectMany(map => map.MonsterSpawns)
             .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
             .ToList();
-        var icarusSpawns = configuration.Maps.Single(map => map is { Number: 10, Discriminator: 0 }).MonsterSpawns
+        var icarus = configuration.Maps.Single(map => map is { Number: IcarusMapNumber, Discriminator: 0 });
+        var icarusSpawns = icarus.MonsterSpawns
             .Where(spawn => spawn is { SpawnTrigger: SpawnTrigger.Automatic, MonsterDefinition.ObjectKind: NpcObjectKind.Monster })
             .ToList();
         var nonIcarusSpawns = permanentMonsterSpawns.Except(icarusSpawns).ToList();
@@ -141,6 +142,7 @@ internal class TestInitializationWithEfCore
             Assert.That(nonIcarusSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
             Assert.That(icarusSpawns, Has.Count.EqualTo(64));
             Assert.That(icarusSpawns.All(spawn => spawn.Quantity == 3), Is.True);
+            Assert.That(icarus.GrantsMasterExperience, Is.True);
             Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops == 2 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
             Assert.That(configuration.MiniGameDefinitions.All(miniGame => miniGame.ArePlayerKillersAllowedToEnter), Is.True);
         });

@@ -122,7 +122,8 @@ group's chance implicitly lowers what is left for the others.
 Route `edit-config-grid/…GameMapDefinition/`
 
 Maps with their number, name, terrain, safe zone, level requirements, monster
-spawn areas, enter and exit gates, and the battle zone of event maps.
+spawn areas, enter and exit gates, battle zone, and whether their monsters grant
+master experience below the global minimum monster level.
 
 The spawn areas and gates are much easier to edit graphically — an edit page of a
 map links to the [map editor](map-editor.md).

@@ -83,6 +83,30 @@ public class ExperienceRateSplitTest
     }
 
     /// <summary>
+    /// Verifies that an enabled map bypasses the global monster-level floor for master experience.
+    /// </summary>
+    [Test]
+    public async ValueTask MapCanGrantMasterExperienceBelowGlobalMonsterLevelAsync()
+    {
+        var context = this.CreateGameServerContext(
+            normalExperienceRate: 1.0f,
+            globalMasterExperienceRate: 1.0f,
+            maximumLevel: 10,
+            maximumMasterLevel: 200,
+            minimumMonsterLevelForMasterExperience: 101);
+        var player = await this.CreatePlayerAsync(context, level: 10, totalLevel: 10, isMasterClass: true).ConfigureAwait(false);
+        var killedObject = CreateKilledObject(level: 100, player.CurrentMap);
+
+        await player.AddMasterExperienceAsync(1, killedObject.Object).ConfigureAwait(false);
+        Assert.That(player.SelectedCharacter!.MasterExperience, Is.Zero);
+
+        player.CurrentMap!.Definition.GrantsMasterExperience = true;
+        await player.AddMasterExperienceAsync(1, killedObject.Object).ConfigureAwait(false);
+
+        Assert.That(player.SelectedCharacter.MasterExperience, Is.EqualTo(1));
+    }
+
+    /// <summary>
     /// Verifies that party experience distribution applies master experience rates for master class members.
     /// </summary>
     [Test]
@@ -263,14 +287,14 @@ public class ExperienceRateSplitTest
         Assert.That((int)player.Attributes![Stats.Level], Is.EqualTo(2));
     }
 
-    private static Mock<IAttackable> CreateKilledObject(float level)
+    private static Mock<IAttackable> CreateKilledObject(float level, GameMap? currentMap = null)
     {
         var attributes = new Mock<IAttributeSystem>();
         attributes.Setup(a => a[Stats.Level]).Returns(level);
 
         var result = new Mock<IAttackable>();
         result.SetupGet(a => a.Attributes).Returns(attributes.Object);
-        result.SetupGet(a => a.CurrentMap).Returns((GameMap?)null);
+        result.SetupGet(a => a.CurrentMap).Returns(currentMap);
         return result;
     }
 
@@ -290,7 +314,7 @@ public class ExperienceRateSplitTest
         return player;
     }
 
-    private IGameServerContext CreateGameServerContext(float normalExperienceRate, float globalMasterExperienceRate, short maximumLevel, short maximumMasterLevel, bool preventExperienceOverflow = false)
+    private IGameServerContext CreateGameServerContext(float normalExperienceRate, float globalMasterExperienceRate, short maximumLevel, short maximumMasterLevel, bool preventExperienceOverflow = false, byte minimumMonsterLevelForMasterExperience = 0)
     {
         var contextProvider = new InMemoryPersistenceContextProvider();
         var gameConfiguration = contextProvider.CreateNewContext().CreateNew<GameConfiguration>();
@@ -303,7 +327,7 @@ public class ExperienceRateSplitTest
         gameConfiguration.MaximumLevel = maximumLevel;
         gameConfiguration.MaximumMasterLevel = maximumMasterLevel;
         gameConfiguration.PreventExperienceOverflow = preventExperienceOverflow;
-        gameConfiguration.MinimumMonsterLevelForMasterExperience = 0;
+        gameConfiguration.MinimumMonsterLevelForMasterExperience = minimumMonsterLevelForMasterExperience;
         gameConfiguration.ExperienceRate = 1.0f;
         gameConfiguration.MasterExperienceRate = globalMasterExperienceRate;
         var map = contextProvider.CreateNewContext().CreateNew<GameMapDefinition>();

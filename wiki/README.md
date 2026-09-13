@@ -1,6 +1,6 @@
 # Hướng dẫn chơi OpenMU x9999
 
-Tài liệu này dành cho người mới tham gia server. Mục tiêu của server là **lên cấp nhanh, mua đủ đồ khởi đầu, săn box và boss cùng nhóm 5–6 người**, sau đó thử build nhân vật hoặc PvP mà không phải cày cuốc kéo dài.
+Tài liệu này dành cho người mới tham gia server. Mục tiêu của server là **lên cấp nhanh, mua đủ đồ khởi đầu, săn box và boss cùng nhóm khoảng 3 người**, sau đó thử build nhân vật hoặc PvP mà không phải cày cuốc kéo dài.
 
 ## 1. Thông tin nhanh
 
@@ -12,7 +12,7 @@ Tài liệu này dành cho người mới tham gia server. Mục tiêu của ser
 | Điểm mỗi lần lên cấp | 500; nhân vật đã hoàn thành Hero Status nhận 501 |
 | Giới hạn mỗi stat | 32.767 |
 | Zen nhặt được | x1000 |
-| Quái tại spot | Tối thiểu 10 con, hồi sinh khoảng 5 giây |
+| Quái tại spot | Thông thường tối thiểu 10 con; mỗi spot Icarus có 3 con; hồi sinh khoảng 5 giây |
 | PvP/PK | Đang bật; kỹ năng diện rộng có thể đánh trúng người chơi |
 | Nhịp boss | Golden → Red Dragon → White Wizard, đổi event mỗi 10 phút |
 
@@ -40,13 +40,13 @@ Một số bộ client có thể được cấu hình dùng cổng `44406`. Nế
 
 1. Tạo nhân vật thuộc class muốn chơi.
 2. Tới NPC trang bị và NPC skill tương ứng với class.
-3. Mua bộ giáp và vũ khí Excellent +7 khởi đầu.
+3. Mua bộ giáp và vũ khí Excellent +9, Luck và normal option tối đa.
 4. Mua đầy đủ sách, ngọc hoặc orb học skill có thể sử dụng.
 5. Mua Large Healing Potion và Large Mana Potion; mỗi bình có thể chứa tối đa 255 lần dùng.
 6. Lập party rồi luyện tại các spot đông quái cho tới level 400; quái luôn cho Zen và chỉ quay thêm ngọc hoặc box, không rơi trang bị trực tiếp.
 7. Nhặt Box of Kundun +1 đến +3 từ quái thường để nâng dần trang bị.
 8. Mua item change class tại Potion Girl Amy khi cần làm quest chuyển class.
-9. Theo thông báo invasion, tập trung cả nhóm săn boss để lấy Box +4, +5 hoặc GM Gift Full Option.
+9. Farm Icarus để săn Box +4; theo thông báo invasion và tập trung nhóm săn boss để lấy Box +4, +5 hoặc GM Gift Full Option.
 10. Sau khi hoàn thiện build, thử đấu PvP hoặc đổi cách phân bổ stat.
 
 ## 4. Shop trang bị và skill
@@ -54,8 +54,8 @@ Một số bộ client có thể được cấu hình dùng cổng `44406`. Nế
 ### Dark Wizard / Soul Master
 
 - **Pasi the Mage (254), Lorencia**
-  - Pad Set Excellent +7.
-  - Skull Staff và Serpent Staff Excellent +7.
+  - Pad Set Excellent +9, Luck và normal option tối đa.
+  - Skull Staff và Serpent Staff Excellent +9, Luck và normal option tối đa.
   - Sách/ngọc skill dành cho Dark Wizard và Magic Gladiator.
 - **Izabel the Wizard (245), Devias**
   - Bản shop thuận tiện tại Devias, bán lại trang bị Dark Wizard và skill Dark Wizard/Magic Gladiator.
@@ -63,16 +63,16 @@ Một số bộ client có thể được cấu hình dùng cổng `44406`. Nế
 ### Dark Knight / Blade Knight
 
 - **Hanzo the Blacksmith (251), Lorencia**
-  - Leather Set Excellent +7.
-  - Blade và Gladius Excellent +7.
+  - Leather Set Excellent +9, Luck và normal option tối đa.
+  - Blade và Gladius Excellent +9, Luck và normal option tối đa.
 - **Alex (230), Lorencia**
   - Ngọc/orb skill của Dark Knight.
 
 ### Fairy Elf / Muse Elf
 
 - **Eo the Craftsman (243), Noria**
-  - Vine Set Excellent +7.
-  - Short Bow và Battle Bow Excellent +7.
+  - Vine Set Excellent +9, Luck và normal option tối đa.
+  - Short Bow và Battle Bow Excellent +9, Luck và normal option tối đa.
 - **Elf Lala (242), Noria**
   - Toàn bộ skill tiêu hao dành cho Fairy Elf.
   - Summoning Orb level 0–6; mỗi level triệu hồi một loại quái khác nhau.
@@ -80,37 +80,37 @@ Một số bộ client có thể được cấu hình dùng cổng `44406`. Nế
 ### Magic Gladiator
 
 - **Hanzo the Blacksmith (251), Lorencia**
-  - Storm Crow Set Excellent +7.
-  - Blade và Skull Staff Excellent +7.
+  - Storm Crow Set Excellent +9, Luck và normal option tối đa.
+  - Blade và Skull Staff Excellent +9, Luck và normal option tối đa.
 - Skill dùng chung với Dark Wizard được bán tại **Pasi** hoặc **Izabel**.
 
 ### Dark Lord
 
 - **Hanzo the Blacksmith (251), Lorencia**
-  - Light Plate Set Excellent +7.
-  - Battle Scepter và Master Scepter Excellent +7.
+  - Light Plate Set Excellent +9, Luck và normal option tối đa.
+  - Battle Scepter và Master Scepter Excellent +9, Luck và normal option tối đa.
 - **Alex (230), Lorencia**
   - Skill tiêu hao dành cho Dark Lord.
 
 ### Summoner
 
 - **Rhea (416), Elvenland**
-  - Red Wing Set Excellent +7.
-  - Violent Wind Stick, Book of Sahamutt và Book of Neil Excellent +7.
+  - Red Wing Set Excellent +9, Luck và normal option tối đa.
+  - Violent Wind Stick, Book of Sahamutt và Book of Neil Excellent +9, Luck và normal option tối đa.
 - **Marce (417), Elvenland**
   - Toàn bộ sách skill dành cho Summoner.
 
 ### Rage Fighter
 
 - **Hanzo the Blacksmith (251), Lorencia**
-  - Sacred Set Excellent +7.
-  - Sacred Glove và Storm Hard Glove Excellent +7.
+  - Sacred Set Excellent +9, Luck và normal option tối đa.
+  - Sacred Glove và Storm Hard Glove Excellent +9, Luck và normal option tối đa.
 - **Alex (230), Lorencia**
   - Skill tiêu hao dành cho Rage Fighter.
 
 ### Shop vũ khí chung tại Devias
 
-**Zienna the Weapons Merchant (246)** bán các vũ khí khởi đầu Excellent +7 cho Dark Knight, Fairy Elf, Magic Gladiator, Dark Lord và Rage Fighter. Skill đầy đủ vẫn nằm tại shop quê nhà của từng class.
+**Zienna the Weapons Merchant (246)** bán các vũ khí khởi đầu Excellent +9, Luck và normal option tối đa cho Dark Knight, Fairy Elf, Magic Gladiator, Dark Lord và Rage Fighter. Skill đầy đủ vẫn nằm tại shop quê nhà của từng class.
 
 ## 5. Shop vật phẩm thiết yếu
 
@@ -134,7 +134,7 @@ Các NPC áp dụng gồm Potion Girl Amy, Oracle Layla, Pamela, Angela, Silvia,
 
 ### Công thức chế tạo Wings
 
-Thực hiện tại **Chaos Goblin/Chaos Machine**. Toàn bộ công thức Wings, cape và Feather of Condor có tỷ lệ thành công cố định **90%**. Wings/cape tạo thành luôn có **Luck** và normal option tối đa; nếu loại đó hỗ trợ Recover HP thì hệ thống luôn ưu tiên Recover HP, nếu không sẽ dùng option gốc của loại Wings. Mỗi special wing line được quay độc lập với tỷ lệ **90%**, vì vậy khả năng ra full dòng rất cao.
+Thực hiện tại **Chaos Goblin/Chaos Machine**. Tất cả 29 công thức của máy Chaos có tỷ lệ thành công cố định **100%**, bao gồm Wings, cape, vé event và nâng cấp Fenrir. Wings/cape tạo thành luôn có **Luck** và normal option tối đa; nếu loại đó hỗ trợ Recover HP thì hệ thống luôn ưu tiên Recover HP, nếu không sẽ dùng option gốc của loại Wings. Mỗi special wing line vẫn được quay độc lập với tỷ lệ **90%**, vì vậy khả năng ra full dòng rất cao.
 
 #### Wings cấp 1
 
@@ -156,7 +156,7 @@ Potion Girl bán sẵn ba Chaos Weapon **+4 +4 option có Luck**, nên có thể
 | Jewel of Chaos | 1 viên |
 | Trang bị Excellent bổ sung | Không bắt buộc; tối thiểu +4 |
 
-Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **90%**. Kết quả ngẫu nhiên: Wings of Spirit, Wings of Soul, Wings of Dragon, Wings of Darkness hoặc Wings of Despair.
+Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **100%**. Kết quả ngẫu nhiên: Wings of Spirit, Wings of Soul, Wings of Dragon, Wings of Darkness hoặc Wings of Despair.
 
 #### Cape of Lord hoặc Cape of Fighter
 
@@ -167,7 +167,7 @@ Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **90%*
 | Jewel of Chaos | 1 viên |
 | Trang bị Excellent bổ sung | Không bắt buộc; tối thiểu +4 |
 
-Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **90%**. Chaos Machine chọn ngẫu nhiên Cape of Lord hoặc Cape of Fighter.
+Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **100%**. Chaos Machine chọn ngẫu nhiên Cape of Lord hoặc Cape of Fighter.
 
 #### Wings cấp 3 — bước 1: tạo Feather of Condor
 
@@ -179,7 +179,7 @@ Chi phí cơ bản **5.000.000 Zen**. Tỷ lệ thành công cố định **90%*
 | Jewel of Creation | 1 viên |
 | Packed Jewel of Soul | 1 pack 10 viên, tức Packed Soul +0 |
 
-Tỷ lệ thành công cố định **90%**. Kết quả là **Feather of Condor**. Vì Potion Girl cũng bán sẵn Feather of Condor, có thể bỏ qua bước này nếu chỉ muốn chế tạo nhanh.
+Tỷ lệ thành công cố định **100%**. Kết quả là **Feather of Condor**. Vì Potion Girl cũng bán sẵn Feather of Condor, có thể bỏ qua bước này nếu chỉ muốn chế tạo nhanh.
 
 #### Wings cấp 3 — bước 2
 
@@ -193,7 +193,7 @@ Tỷ lệ thành công cố định **90%**. Kết quả là **Feather of Condor
 | Packed Jewel of Bless | 1 pack 10 viên, tức Packed Bless +0 |
 | Packed Jewel of Soul | 1 pack 10 viên, tức Packed Soul +0 |
 
-Tỷ lệ thành công cố định **90%**. Kết quả ngẫu nhiên: Wings of Storm, Wings of Eternal, Wings of Illusion, Wings of Ruin, Cape of Emperor, Wings of Dimension hoặc Cape of Overrule.
+Tỷ lệ thành công cố định **100%**. Kết quả ngẫu nhiên: Wings of Storm, Wings of Eternal, Wings of Illusion, Wings of Ruin, Cape of Emperor, Wings of Dimension hoặc Cape of Overrule.
 
 > **Lưu ý:** Packed Jewel +0/+1/+2 lần lượt đại diện cho pack **10/20/30 viên**. Công thức Wings cấp 3 chỉ yêu cầu pack 10 viên, vì vậy hãy mua bản **+0**.
 
@@ -201,16 +201,24 @@ Với Wings cấp 2 và Cape of Fighter có ba special lines, xác suất nhận
 
 ## 6. Trang bị Excellent trong shop
 
-Đồ shop là bộ khởi đầu, không phải đồ cuối game:
+Đồ shop là bộ khởi đầu mạnh, nhưng vẫn không bằng phần thưởng full-option từ Box +4/+5 hoặc GM Gift:
 
-- Tất cả giáp khởi đầu đều **+7**, có Luck và đúng một excellent option tăng khả năng phòng thủ/sinh tồn.
-- Vũ khí khởi đầu đều **+7**, có Luck, có skill nếu loại vũ khí đó hỗ trợ và có một excellent option tấn công.
-- Đồ shop khởi đầu không có normal option +16.
-- Muốn đồ nhiều excellent options và +16, người chơi vẫn phải săn box — đặc biệt là GM Gift.
+- Mọi trang bị hỗ trợ normal option đều được bán sẵn ở **+9**, có **Luck** và normal option cấp tối đa; không cần gắn thêm Jewel of Life.
+- Vũ khí giữ skill nếu loại vũ khí đó hỗ trợ và giữ Excellent option tấn công có sẵn.
+- Giáp giữ Excellent option phòng thủ/sinh tồn có sẵn.
+- Muốn có toàn bộ Excellent lines và các set/vũ khí gần end-game, người chơi vẫn phải săn Box +4, +5 hoặc GM Gift.
 
-## 7. Box of Kundun rơi ở đâu?
+## 7. Hướng dẫn săn Box of Kundun
 
-### Quái thường
+### Lộ trình nhanh
+
+1. Mua đồ shop **+9, Luck, normal option tối đa**, học đủ skill và mang Large Healing Potion 255 lần dùng.
+2. Farm quái thường ở map phù hợp để lấy Box +1/+2/+3. Chọn spot giết nhanh thay vì cố đánh quái quá mạnh vì tỷ lệ được tính trên mỗi quái chết.
+3. Khi đã đủ stat và đồ shop, chuyển sang **Icarus** để săn Box +4. Mỗi spot Icarus chỉ có 3 quái nhưng quái mạnh hơn rõ rệt; solo được nếu dùng potion đều, đi nhóm sẽ an toàn hơn.
+4. Theo thông báo Golden, Red Dragon và White Wizard invasion. Nhóm khoảng 3 người nên tập trung cùng một boss; boss đã được tăng mạnh và đồ shop chưa đủ để giết trong một hit.
+5. Dọn sẵn inventory trước khi săn. Box chỉ sinh một món; nếu pool chọn một set thì nhận **một mảnh ngẫu nhiên**, không nhận nguyên bộ.
+
+### Quái thường: Box +1 đến +3
 
 Quái thường không còn rơi giáp, vũ khí, đồ Excellent ngẫu nhiên, item quest hoặc nguyên liệu map. Mỗi lần chết luôn trả Zen, sau đó có đúng một lượt quay phần thưởng phụ:
 
@@ -222,11 +230,17 @@ Quái thường không còn rơi giáp, vũ khí, đồ Excellent ngẫu nhiên,
 | Box of Kundun +3 | 1% |
 | Không có phần thưởng phụ | 94,5% |
 
-Ngọc và box dùng chung một lượt quay nên một quái không đồng thời rơi cả ngọc lẫn box. Trang bị mới đến từ shop hoặc từ lúc mở Box of Kundun/GM Gift.
+Ngọc và Box +1/+2/+3 dùng chung một lượt quay nên một quái không đồng thời rơi hai phần thưởng này.
 
-### Boss
+### Icarus: thêm Box +4
 
-Mỗi boss hợp lệ luôn rơi đúng một phần thưởng gacha:
+- Mọi quái thường trên map **Icarus** có thêm tỷ lệ **5%** rơi Box of Kundun +4.
+- Mỗi spot có 3 quái. Quái Icarus có HP, damage, defense và attack rate cao hơn quái luyện cấp thông thường; nên mang nhiều máu và tránh kéo nhiều spot cùng lúc khi solo.
+- Box rơi tại Icarus là Box of Kundun **+4 thật** và mở đúng pool +4 bên dưới.
+
+### Boss: Box +4, Box +5 và GM Gift
+
+Mỗi boss hợp lệ có một lượt gacha với tổng xác suất 100%:
 
 | Phần thưởng | Tỷ lệ |
 | --- | ---: |
@@ -234,38 +248,102 @@ Mỗi boss hợp lệ luôn rơi đúng một phần thưởng gacha:
 | Box of Kundun +5 | 47,5% |
 | GM Gift Full Option | 5% |
 
-Các boss áp dụng gồm nhóm Golden Monster, Red Dragon, White Wizard, Illusion of Kundun, Erohim, Nightmare, Maya và hai tay Maya, Dark Elf và Selupan. Hộ vệ của White Wizard không được tính là boss.
+Các boss áp dụng gồm nhóm Golden Monster, Red Dragon, White Wizard, Illusion of Kundun, Erohim, Nightmare, Maya và hai tay Maya, Dark Elf và Selupan. Hộ vệ của White Wizard không được tính là boss. Golden → Red Dragon → White Wizard chạy luân phiên, đổi event mỗi 10 phút; hãy theo thông báo trong game để tìm đúng map.
 
-## 8. Mỗi loại box mở ra gì?
+## 8. Danh sách item trong từng box
 
-Tất cả Box of Kundun +1 đến +5 hiện mở ra **một item Excellent có Luck với xác suất 100%**. Không còn trường hợp box Kundun mở ra Zen.
+### Quy tắc chung
 
-| Box | Nhóm phần thưởng điển hình |
-| --- | --- |
-| Kundun +1 | Vũ khí, khiên và các set cấp thấp như Leather, Pad, Vine, Bronze, Silk, Violent Wind, Red Wing. |
-| Kundun +2 | Trang bị thấp–trung như Scale, Brass, Bone, Sphinx, Wind, Spirit, Light Plate, Ancient; có thể có nhẫn và dây chuyền. |
-| Kundun +3 | Trang bị trung cấp như Plate, Dragon, Legendary, Guardian, Storm Crow, Adamantine, Bloody Amethyst, Sacred Fire. |
-| Kundun +4 | Trang bị cao cấp, một số vũ khí Archangel và các set Black Dragon, Dark Phoenix, Grand Soul, Divine, Thunder Hawk, Dark Steel, Rhodon Quartz, Storm Jahad Fire. |
-| Kundun +5 | Trang bị top-tier như Knight Blade, Dark Reign Blade, Rune Blade, Shining Scepter, Arrow Viper Bow, Staff of Kundun, Platina Staff và các set Great Dragon, Dark Soul, Hurricane, Red Spirit, Dark Master. |
+- Mỗi box mở ra đúng **một** item trong pool tương ứng; không còn kết quả Zen.
+- Box +1/+2/+3: item Excellent ngẫu nhiên và có Luck nếu definition hỗ trợ; số Excellent lines vẫn được quay ngẫu nhiên.
+- Box +4/+5: item cố định **+9, full Excellent, Luck và normal option tối đa** nếu item hỗ trợ; vũ khí có skill nếu definition hỗ trợ và durability được nạp đầy.
+- `Full Excellent` nghĩa là lấy toàn bộ Excellent lines mà chính loại item đó hỗ trợ. Một item không có đủ sáu loại option trong definition sẽ không thể hiện đủ sáu dòng.
+- Các box không tự thêm Harmony, Ancient/Set option hoặc socket option. Trang bị socket từ GM Gift vẫn có số socket ngẫu nhiên theo khả năng của item.
+- Tên `Set` dưới đây đại diện cho các mảnh giáp hợp lệ của set. Khi trúng set, box chỉ trả một mảnh.
 
-Khi box chọn một set, phần thưởng là **một mảnh ngẫu nhiên của set**, không phải nguyên bộ.
+### Box of Kundun +1
 
-Excellent options của Kundun +1 đến +5 vẫn được tạo ngẫu nhiên, nhưng Luck luôn có nếu loại trang bị hỗ trợ. Chúng không bảo đảm full option.
+- **Kiếm:** Kris, Short Sword, Rapier, Katana, Sword of Assassin.
+- **Rìu:** Small Axe, Hand Axe, Double Axe, Tomahawk.
+- **Chùy:** Mace, Morning Star, Flail.
+- **Giáo:** Spear, Dragon Lance, Double Poleaxe, Halberd, Berdysh.
+- **Cung/nỏ:** Short Bow, Bow, Elven Bow, Crossbow, Golden Crossbow.
+- **Staff/Stick:** Skull Staff, Angelic Staff, Serpent Staff, Mistery Stick, Violent Wind Stick.
+- **Khiên:** Small Shield, Horn Shield, Kite Shield, Elven Shield, Buckler.
+- **Set:** Leather, Pad, Vine, Bronze, Silk, Violent Wind, Red Wing.
+
+### Box of Kundun +2
+
+- **Kiếm:** Blade, Gladius, Falchion, Serpent Sword, Sword of Salamander, Light Saber.
+- **Rìu:** Elven Axe, Battle Axe, Nikea Axe, Larkan Axe.
+- **Chùy/Scepter:** Great Hammer, Crystal Morning Star, Battle Scepter, Master Scepter.
+- **Giáo/lưỡi hái:** Light Spear, Giant Trident, Serpent Spear, Great Scythe.
+- **Cung/nỏ:** Battle Bow, Tiger Bow, Arquebus, Light Crossbow, Serpent Crossbow.
+- **Staff/Stick:** Thunder Staff, Gorgon Staff, Red Wing Stick.
+- **Khiên:** Dragon Slayer Shield, Skull Shield, Spiked Shield, Tower Shield.
+- **Trang sức:** Ring of Ice, Ring of Poison, Pendant of Lighting, Pendant of Fire.
+- **Set:** Scale, Brass, Bone, Sphinx, Wind, Spirit, Light Plate, Ancient.
+
+### Box of Kundun +3
+
+- **Kiếm/găng:** Legendary Sword, Heliacal Sword, Double Blade, Lightning Sword, Giant Sword, Sacred Glove.
+- **Rìu/chùy/Scepter:** Crescent Axe, Crystal Sword, Chaos Dragon Axe, Elemental Mace, Great Scepter.
+- **Giáo:** Bill of Balrog.
+- **Cung/nỏ:** Silver Bow, Chaos Nature Bow, Bluewing Crossbow, Aquagold Crossbow.
+- **Staff/Stick:** Staff of Resurrection, Legendary Staff, Chaos Lightning Staff, Ancient Stick, Black Rose Stick.
+- **Khiên:** Plate Shield, Large Round Shield, Serpent Shield, Bronze Shield, Legendary Shield.
+- **Trang sức:** Ring of Fire, Ring of Earth, Ring of Wind, Ring of Magic, Pendant of Ice, Pendant of Wind, Pendant of Water, Pendant of Ability.
+- **Set:** Plate, Dragon, Legendary, Guardian, Storm Crow, Adamantine, Black Rose, Sacred.
+
+### Box of Kundun +4 — near end-game
+
+- **Kiếm/găng:** Sword of Destruction, Dark Breaker, Thunder Blade, Divine Sword of Archangel, Knight Blade, Dark Reign Blade, Rune Blade, Storm Hard Glove, Piercing Blade Glove.
+- **Scepter:** Lord Scepter, Great Lord Scepter, Divine Scepter of Archangel, Shining Scepter.
+- **Giáo:** Dragon Spear.
+- **Cung/nỏ:** Saint Crossbow, Celestial Bow, Divine Crossbow of Archangel, Great Reign Crossbow, Arrow Viper Bow.
+- **Staff/Stick:** Staff of Destruction, Dragon Soul Staff, Divine Staff of Archangel, Staff of Kundun, Platina Staff, Storm Blitz Stick.
+- **Khiên:** Chaos Dragon Shield, Grand Soul Shield, Elemental Shield.
+- **Set DK/BK:** Dark Phoenix, Great Dragon.
+- **Set DW/SM:** Grand Soul, Dark Soul.
+- **Set Elf:** Divine, Red Spirit.
+- **Set MG:** Thunder Hawk, Hurricane.
+- **Set DL:** Dark Steel, Dark Master.
+- **Set Summoner:** Black Rose, Lilium.
+- **Set RF:** Storm Hard, Piercing.
+
+### Box of Kundun +5 — level 380
+
+- **Kiếm/găng:** Bone Blade, Explosion Blade, Flamberge, Sword Breaker, Imperial Sword, Phoenix Soul Star.
+- **Scepter:** Soleil Scepter.
+- **Cung:** Sylph Wind Bow.
+- **Staff/Stick:** Grand Viper Staff, Storm Blitz Stick, Eternal Wing Stick, Deadly Staff, Imperial Staff.
+- **Set level 380:** Dragon Knight (DK/BK), Venom Mist (DW/SM), Sylphid Ray (Elf), Volcano (MG), Sunlight (DL), Aura (Summoner), Phoenix Soul (RF).
 
 ## 9. GM Gift Full Option
 
-GM Gift là jackpot có tỷ lệ **5% từ boss**. Client gốc có thể vẫn hiển thị tên item là `GM Gift`; đây chính là box Full Option của server.
+GM Gift là jackpot có tỷ lệ **5% từ boss**. Client gốc có thể vẫn hiển thị tên item là `GM Gift`; đây chính là box Full Option cao nhất của server.
 
-Khi mở, người chơi nhận một trang bị thuộc pool top-tier của Kundun +5 với:
+GM Gift chứa **toàn bộ vũ khí và set của Box +5**, cộng thêm các set socket end-game:
 
-- Level +13.
-- Tối đa sáu excellent options khác nhau nếu item hỗ trợ.
+- Titan.
+- Brave.
+- Destroy — một số client/data hiển thị tên `Destory`.
+- Phantom.
+- Seraphim.
+- Faith.
+- Paewang.
+- Hades.
+- Queen.
+
+Item nhận được có:
+
+- Level **+9**.
+- Toàn bộ Excellent lines mà item hỗ trợ.
 - Luck nếu item hỗ trợ.
 - Skill nếu vũ khí hỗ trợ skill.
-- Normal option +16 nếu item hỗ trợ.
+- Normal option cấp tối đa nếu item hỗ trợ.
 - Durability tối đa.
-
-Chỉ GM Gift bảo đảm hợp đồng Full Option này. Box Kundun thông thường bảo đảm item Excellent và Luck, nhưng số excellent option vẫn ngẫu nhiên.
+- Với trang bị socket: số socket ngẫu nhiên từ 1 đến giới hạn của item; socket chưa được gắn seed option sẵn.
 
 ## 10. Lịch invasion boss
 
@@ -279,25 +357,24 @@ Ba invasion chạy thành một vòng liên tục 30 phút:
 
 Sau phút 30, chu kỳ bắt đầu lại. Mỗi event kéo dài 10 phút và không chồng lên hai event còn lại. Hãy theo dõi thông báo trong game để biết event vừa bắt đầu và bản đồ liên quan.
 
-## 11. Cách chơi đề xuất cho nhóm 5–6 người
+## 11. Cách chơi đề xuất cho nhóm 3 người
 
 ### Chia vai trò
 
-- Một hoặc hai nhân vật thiên về sát thương đơn mục tiêu để đánh boss.
+- Một nhân vật thiên về sát thương đơn mục tiêu để đánh boss.
 - Một nhân vật có buff/hỗ trợ, thường là Fairy Elf.
-- Một nhân vật có kỹ năng diện rộng để dọn spot hoặc quái invasion.
-- Các thành viên còn lại có thể thử build PvP, tank hoặc class yêu thích.
+- Một nhân vật dọn quái, hỗ trợ sát thương hoặc chịu đòn tùy đội hình.
 
 Đây chỉ là gợi ý. Do tốc độ lên cấp và lượng point rất cao, nhóm có thể đổi chiến thuật mà không phải tạo lại toàn bộ tiến trình.
 
 ### Vòng chơi ngắn
 
 1. Luyện level, nhặt Zen và ngọc.
-2. Mua đồ Excellent +7 có Luck cùng toàn bộ skill cần thiết.
+2. Mua đồ Excellent +9 có Luck, normal option tối đa và toàn bộ skill cần thiết.
 3. Mua item change class hoặc trang bị tạo cánh tại Potion Girl Amy khi cần.
 4. Farm quái thường để lấy Kundun +1/+2/+3; quái không rơi trang bị trực tiếp.
-5. Gom nhóm theo chu kỳ invasion 10 phút.
-6. Săn Kundun +4/+5 và jackpot GM Gift.
+5. Farm Icarus để săn Box +4 với tỷ lệ 5% mỗi quái.
+6. Gom nhóm theo chu kỳ invasion 10 phút để săn Box +4/+5 và jackpot GM Gift.
 7. So sánh build bằng duel hoặc PvP.
 
 ### Phân phối đồ trong party
@@ -329,11 +406,11 @@ Cấu hình hiện tại là 500 point mỗi level, hoặc 501 sau Hero Status. 
 
 ### Vì sao Kundun box không rơi Zen?
 
-Kundun +1 đến +5 luôn trả về một item Excellent có Luck để giữ nhịp chơi nhanh.
+Kundun +1 đến +5 luôn trả về một item trang bị để giữ nhịp chơi nhanh; Box +4/+5 còn bảo đảm +9 và full Excellent theo khả năng của item.
 
-### Vì sao đồ Excellent từ Kundun không có đủ sáu option?
+### Vì sao item Full Excellent không luôn hiện đủ sáu option?
 
-Kundun box thường vẫn quay số excellent option ngẫu nhiên, nhưng Luck được bảo đảm. Muốn bảo đảm sáu Excellent options, Luck, skill và +16, cần săn GM Gift từ boss.
+Box +1/+2/+3 vẫn quay số Excellent options ngẫu nhiên. Box +4/+5 và GM Gift lấy toàn bộ Excellent lines mà loại item hỗ trợ, nhưng một definition chỉ có ít hơn sáu loại option thì client chỉ hiện số dòng tương ứng.
 
 ### Tôi có cần reset nhiều lần không?
 
@@ -346,11 +423,11 @@ Shop bán đủ skill phù hợp với class, kể cả skill cấp cao. Yêu c�
 ## 14. Tóm tắt cho người mới
 
 ```text
-Mua đồ Excellent +7 có Luck và skill đúng class
+Mua đồ Excellent +9 có Luck, normal option tối đa và skill đúng class
 → mua potion 255, item change class hoặc đồ tạo cánh tại Amy
 → lập party lên level 400
 → farm Zen/ngọc/Kundun +1/+2/+3; quái không rơi trang bị
-→ theo invasion mỗi 10 phút
-→ săn Kundun +4/+5 và GM Gift
+→ farm Icarus để săn Kundun +4
+→ theo invasion mỗi 10 phút để săn Kundun +4/+5 và GM Gift
 → hoàn thiện build rồi PvP
 ```

@@ -614,4 +614,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ConfigureInstantWingCraftingUpdatePlugIn"/>.
     /// </summary>
     ConfigureInstantWingCrafting = 121,
+
+    /// <summary>
+    /// The version of the <see cref="ConfigureMasterProgressionUpdatePlugIn"/>.
+    /// </summary>
+    ConfigureMasterProgression = 122,
 }

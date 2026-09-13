@@ -33,6 +33,21 @@ internal static class InstantServerConfiguration
     internal const float PointsPerLevel = 500f;
 
     /// <summary>
+    /// Gets the maximum master level.
+    /// </summary>
+    internal const short MaximumMasterLevel = 400;
+
+    /// <summary>
+    /// Gets the master experience multiplier.
+    /// </summary>
+    internal const float MasterExperienceRate = 1_000f;
+
+    /// <summary>
+    /// Gets the master points granted per level.
+    /// </summary>
+    internal const float MasterPointsPerLevel = 5f;
+
+    /// <summary>
     /// Gets the minimum automatic spawn quantity.
     /// </summary>
     internal const short MonsterPackSize = 10;
@@ -91,6 +106,7 @@ internal static class InstantServerConfiguration
         gameConfiguration.ExperienceRate = ExperienceRate;
         gameConfiguration.AreaSkillHitsPlayer = true;
         gameConfiguration.ExcellentItemDropLevelDelta = 0;
+        ConfigureMasterProgression(context, gameConfiguration);
         ConfigureMoneyAmountRate(context, gameConfiguration);
         ConfigureDropRates(gameConfiguration);
         ConfigureLevelUpPoints(gameConfiguration);
@@ -157,6 +173,33 @@ internal static class InstantServerConfiguration
             {
                 persistentStat.MaximumValue = 32_767;
             }
+        }
+    }
+
+    /// <summary>
+    /// Configures master-level limits, experience, and points per level.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureMasterProgression(IContext context, GameConfiguration gameConfiguration)
+    {
+        gameConfiguration.MaximumMasterLevel = MaximumMasterLevel;
+        gameConfiguration.MasterExperienceRate = MasterExperienceRate;
+        var masterPointsDefinition = gameConfiguration.Attributes.Single(attribute => attribute.Id == Stats.MasterPointsPerLevelUp.Id);
+        foreach (var characterClass in gameConfiguration.CharacterClasses.Where(characterClass => characterClass.IsMasterClass))
+        {
+            var masterPoints = characterClass.BaseAttributeValues.FirstOrDefault(attribute => attribute.Definition?.Id == Stats.MasterPointsPerLevelUp.Id);
+            if (masterPoints?.Value == MasterPointsPerLevel)
+            {
+                continue;
+            }
+
+            if (masterPoints is not null)
+            {
+                characterClass.BaseAttributeValues.Remove(masterPoints);
+            }
+
+            characterClass.BaseAttributeValues.Add(context.CreateNew<ConstValueAttribute>(MasterPointsPerLevel, masterPointsDefinition, AggregateType.AddRaw));
         }
     }
 

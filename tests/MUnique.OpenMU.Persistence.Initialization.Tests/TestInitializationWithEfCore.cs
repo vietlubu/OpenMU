@@ -17,6 +17,7 @@ using MUnique.OpenMU.GameLogic.PlugIns.InvasionEvents;
 using MUnique.OpenMU.GameLogic.PlugIns.PeriodicTasks;
 using MUnique.OpenMU.PlugIns;
 using MUnique.OpenMU.Persistence.EntityFramework;
+using MUnique.OpenMU.GameLogic.PlugIns.ChatCommands;
 using MUnique.OpenMU.Persistence.Initialization.Updates;
 using MUnique.OpenMU.Persistence.InMemory;
 
@@ -89,10 +90,14 @@ internal class TestInitializationWithEfCore
             Assert.That(configuration.AreaSkillHitsPlayer, Is.True);
             Assert.That(configuration.ExcellentItemDropLevelDelta, Is.Zero);
             Assert.That(configuration.GlobalBaseAttributeValues.Single(attribute => attribute.Definition?.Id == Stats.MoneyAmountRate.Id).Value, Is.EqualTo(1_000f));
+            Assert.That(configuration.MaximumMasterLevel, Is.EqualTo(400));
+            Assert.That(configuration.MasterExperienceRate, Is.EqualTo(1_000f));
             Assert.That(servers, Is.Not.Empty);
             Assert.That(servers.All(server => server is { ExperienceRate: 1.0f, PvpEnabled: true }), Is.True);
             Assert.That(configuration.CharacterClasses.SelectMany(characterClass => characterClass.StatAttributes).Where(attribute => attribute.Attribute == Stats.PointsPerLevelUp).All(attribute => attribute.BaseValue == 500f), Is.True);
             Assert.That(new[] { Stats.BaseStrength, Stats.BaseAgility, Stats.BaseVitality, Stats.BaseEnergy, Stats.BaseLeadership }.All(stat => configuration.Attributes.Single(attribute => attribute == stat).MaximumValue == 32_767), Is.True);
+            Assert.That(configuration.CharacterClasses.Where(characterClass => characterClass.IsMasterClass).SelectMany(characterClass => characterClass.BaseAttributeValues).Where(attribute => attribute.Definition == Stats.MasterPointsPerLevelUp).All(attribute => attribute.Value == 5f), Is.True);
+            Assert.That(configuration.PlugInConfigurations.Single(configuration => configuration.TypeId == typeof(EndClassChatCommandPlugIn).GUID).IsActive, Is.True);
             Assert.That(permanentMonsterSpawns, Is.Not.Empty);
             Assert.That(permanentMonsterSpawns.All(spawn => spawn.Quantity >= 10), Is.True);
             Assert.That(monsters.All(monster => monster.NumberOfMaximumItemDrops == 2 && monster.RespawnDelay <= TimeSpan.FromSeconds(5)), Is.True);
@@ -310,6 +315,33 @@ internal class TestInitializationWithEfCore
             configuration.AreaSkillHitsPlayer = false;
             server.PvpEnabled = false;
             await new ConfigureInstantServerUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        }
+
+        await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests that the master-progression update repairs existing configuration and enables the final-class command.
+    /// </summary>
+    [Test]
+    public async Task TestConfigureMasterProgressionUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var masterClass = configuration.CharacterClasses.First(characterClass => characterClass.IsMasterClass);
+            var masterPoints = masterClass.BaseAttributeValues.Single(attribute => attribute.Definition == Stats.MasterPointsPerLevelUp);
+            masterClass.BaseAttributeValues.Remove(masterPoints);
+            masterClass.BaseAttributeValues.Add(context.CreateNew<ConstValueAttribute>(1, masterPoints.Definition!));
+            configuration.MaximumMasterLevel = 1;
+            configuration.MasterExperienceRate = 1;
+            configuration.PlugInConfigurations.Remove(configuration.PlugInConfigurations.Single(plugIn => plugIn.TypeId == typeof(EndClassChatCommandPlugIn).GUID));
+
+            await new ConfigureMasterProgressionUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
         }
 
         await this.AssertInstantServerConfigurationAsync(contextProvider).ConfigureAwait(false);

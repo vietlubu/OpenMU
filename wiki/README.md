@@ -12,7 +12,7 @@ Tài liệu này dành cho người mới tham gia server. Mục tiêu của ser
 | Điểm mỗi lần lên cấp | 500; nhân vật đã hoàn thành Hero Status nhận 501 |
 | Giới hạn mỗi stat | 32.767 |
 | Zen nhặt được | x1000 |
-| Quái tại spot | Thông thường tối thiểu 10 con; mỗi spot Icarus có 3 con; Kalima 7 có 60 quái thường phân bố ngẫu nhiên trong vùng X 28–121, Y 6–109; hồi sinh khoảng 5 giây; toàn bộ chỉ số quái thường ×3, Kundun 7 giữ nguyên; quái thường không rơi Zen/Box Kundun +1–+3, Box Kundun +4 có tỷ lệ 10% |
+| Quái tại spot | Thông thường tối thiểu 10 con; mỗi spot Icarus có 3 con; Kalima 7 có 60 quái thường phân bố ngẫu nhiên trong vùng X 28–121, Y 6–109; hồi sinh khoảng 5 giây; toàn bộ chỉ số quái thường ×2,1, Kundun 7 giữ nguyên; quái thường không rơi Zen/Box Kundun +1–+3, Box Kundun +4 có tỷ lệ 20% |
 | PvP/PK | Đang bật; kỹ năng diện rộng có thể đánh trúng người chơi |
 | Nhịp boss | Golden → Red Dragon → White Wizard, đổi event mỗi 10 phút |
 

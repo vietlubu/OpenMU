@@ -669,4 +669,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ConfigureKalimaSevenRegularDropsUpdatePlugIn"/>.
     /// </summary>
     ConfigureKalimaSevenRegularDrops = 132,
+
+    /// <summary>
+    /// The version of the <see cref="RetuneKalimaSevenRegularMonstersUpdatePlugIn"/>.
+    /// </summary>
+    RetuneKalimaSevenRegularMonsters = 133,
 }

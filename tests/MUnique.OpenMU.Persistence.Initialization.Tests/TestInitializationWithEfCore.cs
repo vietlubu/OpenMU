@@ -739,6 +739,80 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests the randomized spawns, local player respawn, and combat scaling of the Kalima 7 update.
+    /// </summary>
+    [Test]
+    public async Task TestConfigureKalimaSevenUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var update = new ConfigureKalimaSevenUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var map = configuration.Maps.Single(map => map is { Number: 36, Discriminator: 0 });
+        var regularNumbers = new HashSet<short> { 331, 332, 333, 334, 335, 336, 337 };
+        var regularSpawns = map.MonsterSpawns.Where(spawn => spawn.MonsterDefinition is { } monster && regularNumbers.Contains(monster.Number)).ToList();
+        var bossSpawn = map.MonsterSpawns.Single(spawn => spawn.MonsterDefinition?.Number == 275);
+        var entrance = map.ExitGates.Single(gate => gate.IsSpawnGate);
+        Assert.Multiple(() =>
+        {
+            Assert.That(regularSpawns, Has.Count.EqualTo(60));
+            Assert.That(regularSpawns, Is.All.Matches<MonsterSpawnArea>(spawn => spawn is { X1: 28, X2: 121, Y1: 6, Y2: 109, Quantity: 1, Direction: Direction.Undefined }));
+            Assert.That(bossSpawn, Has.Property(nameof(MonsterSpawnArea.X1)).EqualTo(26));
+            Assert.That(bossSpawn, Has.Property(nameof(MonsterSpawnArea.X2)).EqualTo(26));
+            Assert.That(bossSpawn, Has.Property(nameof(MonsterSpawnArea.Y1)).EqualTo(76));
+            Assert.That(bossSpawn, Has.Property(nameof(MonsterSpawnArea.Y2)).EqualTo(76));
+            Assert.That(bossSpawn.Quantity, Is.EqualTo(1));
+            Assert.That(map.SafezoneMap, Is.SameAs(map));
+            Assert.That(entrance, Has.Property(nameof(ExitGate.X1)).EqualTo(10));
+            Assert.That(entrance, Has.Property(nameof(ExitGate.X2)).EqualTo(17));
+            Assert.That(entrance, Has.Property(nameof(ExitGate.Y1)).EqualTo(16));
+            Assert.That(entrance, Has.Property(nameof(ExitGate.Y2)).EqualTo(22));
+        });
+
+        var expectedRegularStats = new (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[]
+        {
+            (331, 820_000, 71_200, 75_200, 5_840, 18_700, 6_930),
+            (332, 880_000, 75_100, 79_100, 6_150, 19_360, 7_260),
+            (333, 973_000, 80_500, 84_500, 6_600, 20_240, 7_590),
+            (334, 1_100_000, 87_000, 91_500, 7_200, 21_120, 8_140),
+            (335, 1_250_000, 95_100, 99_600, 7_830, 22_330, 8_910),
+            (336, 1_450_000, 104_000, 108_500, 8_650, 23_760, 9_680),
+            (337, 1_700_000, 116_800, 121_300, 9_920, 26_180, 10_670),
+        };
+        foreach (var expected in expectedRegularStats)
+        {
+            var monster = configuration.Monsters.Single(monster => monster.Number == expected.Number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(monster.RespawnDelay, Is.EqualTo(TimeSpan.FromSeconds(5)));
+                Assert.That(monster[Stats.MaximumHealth], Is.EqualTo(expected.Health));
+                Assert.That(monster[Stats.MinimumPhysBaseDmg], Is.EqualTo(expected.MinimumDamage));
+                Assert.That(monster[Stats.MaximumPhysBaseDmg], Is.EqualTo(expected.MaximumDamage));
+                Assert.That(monster[Stats.DefenseBase], Is.EqualTo(expected.Defense));
+                Assert.That(monster[Stats.AttackRatePvm], Is.EqualTo(expected.AttackRate));
+                Assert.That(monster[Stats.DefenseRatePvm], Is.EqualTo(expected.DefenseRate));
+            });
+        }
+
+        var boss = configuration.Monsters.Single(monster => monster.Number == 275);
+        Assert.Multiple(() =>
+        {
+            Assert.That(boss[Stats.MaximumHealth], Is.EqualTo(120_000_000));
+            Assert.That(boss[Stats.MinimumPhysBaseDmg], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.MaximumPhysBaseDmg], Is.EqualTo(72_000));
+            Assert.That(boss[Stats.DefenseBase], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.AttackRatePvm], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.DefenseRatePvm], Is.EqualTo(48_000));
+        });
+    }
+
+    /// <summary>
     /// Tests that the restricted-drop update repairs existing maps, monsters, and Potion Girl stock idempotently.
     /// </summary>
     [Test]

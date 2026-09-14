@@ -649,4 +649,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ConfigureGmGiftJewelryUpdatePlugIn"/>.
     /// </summary>
     ConfigureGmGiftJewelry = 128,
+
+    /// <summary>
+    /// The version of the <see cref="ConfigureKalimaSevenUpdatePlugIn"/>.
+    /// </summary>
+    ConfigureKalimaSeven = 129,
 }

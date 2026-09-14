@@ -664,4 +664,9 @@ public enum UpdateVersion
     /// The version of the <see cref="IncreaseKalimaSevenDifficultyUpdatePlugIn"/>.
     /// </summary>
     IncreaseKalimaSevenDifficulty = 131,
+
+    /// <summary>
+    /// The version of the <see cref="ConfigureKalimaSevenRegularDropsUpdatePlugIn"/>.
+    /// </summary>
+    ConfigureKalimaSevenRegularDrops = 132,
 }

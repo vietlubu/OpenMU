@@ -703,6 +703,42 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests that the Kalima 7 regular drop update removes Zen and low-tier Kundun boxes idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestConfigureKalimaSevenRegularDropsUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        await new RestrictInstantServerDropsUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        var update = new ConfigureKalimaSevenRegularDropsUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var map = configuration.Maps.Single(map => map is { Number: 36, Discriminator: 0 });
+        var boxOfKundun = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+        var boxFourGroup = configuration.DropItemGroups.Single(group => group.GetId() == new Guid(0x200, 9_999, 36, 1, 0, 0, 0, 0, 0, 0, 0));
+        var regularNumbers = new HashSet<short> { 331, 332, 333, 334, 335, 336, 337 };
+        var regularMonsters = configuration.Monsters.Where(monster => regularNumbers.Contains(monster.Number)).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(map.DropItemGroups, Has.None.Matches<DropItemGroup>(group => group.ItemType == SpecialItemType.Money));
+            Assert.That(boxFourGroup.Chance, Is.EqualTo(0.1));
+            Assert.That(boxFourGroup.ItemType, Is.EqualTo(SpecialItemType.RandomItem));
+            Assert.That(boxFourGroup.ItemLevel, Is.EqualTo(11));
+            Assert.That(boxFourGroup.PossibleItems, Is.EquivalentTo(new[] { boxOfKundun }));
+            Assert.That(regularMonsters, Has.Count.EqualTo(7));
+            Assert.That(regularMonsters, Is.All.Matches<MonsterDefinition>(monster => monster.NumberOfMaximumItemDrops == 1));
+            Assert.That(regularMonsters, Is.All.Matches<MonsterDefinition>(monster => monster.DropItemGroups.Contains(boxFourGroup)));
+            Assert.That(regularMonsters.SelectMany(monster => monster.DropItemGroups), Has.None.Matches<DropItemGroup>(group => group.PossibleItems.Contains(boxOfKundun) && group.ItemLevel is >= 8 and <= 10));
+        });
+    }
+
+    /// <summary>
     /// Tests that the GM Gift jewelry update adds one low-rate full-excellent opening idempotently.
     /// </summary>
     [Test]

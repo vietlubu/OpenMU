@@ -29,7 +29,10 @@ public sealed class ConfigureKalimaSevenUpdatePlugIn : UpdatePlugInBase
     /// </summary>
     internal const string PlugInDescription = "Randomizes Kalima 7 monsters across the combat area, respawns players at the entrance, and increases monster strength.";
 
-    private static readonly (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[] RegularMonsterStats =
+    /// <summary>
+    /// The baseline attributes of Kalima 7's regular monsters.
+    /// </summary>
+    internal static readonly (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[] RegularMonsterStats =
     [
         (331, 820_000, 71_200, 75_200, 5_840, 18_700, 6_930),
         (332, 880_000, 75_100, 79_100, 6_150, 19_360, 7_260),
@@ -58,6 +61,26 @@ public sealed class ConfigureKalimaSevenUpdatePlugIn : UpdatePlugInBase
     /// <inheritdoc />
     public override bool IsMandatory => true;
 
+    /// <summary>
+    /// Applies the configured regular-monster attributes at the given multiplier.
+    /// </summary>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    /// <param name="multiplier">The attribute multiplier.</param>
+    internal static void ApplyRegularMonsterStats(GameConfiguration gameConfiguration, float multiplier)
+    {
+        foreach (var stats in RegularMonsterStats)
+        {
+            var monster = gameConfiguration.Monsters.Single(monster => monster.Number == stats.Number);
+            monster.RespawnDelay = TimeSpan.FromSeconds(5);
+            Set(monster, Stats.MaximumHealth, stats.Health * multiplier);
+            Set(monster, Stats.MinimumPhysBaseDmg, stats.MinimumDamage * multiplier);
+            Set(monster, Stats.MaximumPhysBaseDmg, stats.MaximumDamage * multiplier);
+            Set(monster, Stats.DefenseBase, stats.Defense * multiplier);
+            Set(monster, Stats.AttackRatePvm, stats.AttackRate * multiplier);
+            Set(monster, Stats.DefenseRatePvm, stats.DefenseRate * multiplier);
+        }
+    }
+
     /// <inheritdoc />
     protected override ValueTask ApplyAsync(IContext context, GameConfiguration gameConfiguration)
     {
@@ -85,17 +108,7 @@ public sealed class ConfigureKalimaSevenUpdatePlugIn : UpdatePlugInBase
         entrance.IsSpawnGate = true;
         map.SafezoneMap = map;
 
-        foreach (var stats in RegularMonsterStats)
-        {
-            var monster = gameConfiguration.Monsters.Single(monster => monster.Number == stats.Number);
-            monster.RespawnDelay = TimeSpan.FromSeconds(5);
-            Set(monster, Stats.MaximumHealth, stats.Health);
-            Set(monster, Stats.MinimumPhysBaseDmg, stats.MinimumDamage);
-            Set(monster, Stats.MaximumPhysBaseDmg, stats.MaximumDamage);
-            Set(monster, Stats.DefenseBase, stats.Defense);
-            Set(monster, Stats.AttackRatePvm, stats.AttackRate);
-            Set(monster, Stats.DefenseRatePvm, stats.DefenseRate);
-        }
+        ApplyRegularMonsterStats(gameConfiguration, 1);
 
         var boss = gameConfiguration.Monsters.Single(monster => monster.Number == 275);
         Set(boss, Stats.MaximumHealth, 120_000_000);

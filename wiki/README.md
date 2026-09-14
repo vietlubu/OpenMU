@@ -130,7 +130,7 @@ Riêng **Potion Girl Amy (253)** còn bán:
 - Jewel of Bless, Soul, Chaos, Life và Creation dạng viên lẻ; đồng thời có Packed Jewel tương ứng loại 10, 20 và 30 viên.
 - Loch's Feather thường, Loch's Feather +1 (Monarch's Crest), Flame of Condor và Feather of Condor cho các công thức cánh/cape cao hơn.
 
-Các NPC áp dụng gồm Potion Girl Amy, Oracle Layla, Pamela, Angela, Silvia, Christine và Leina. Các shop barmaid, vé event và NPC crafting khác vẫn giữ nội dung Season 6 gốc.
+Riêng **Lumen the Barmaid (255)** bán vé vào event hoàn chỉnh: Invisibility Cloak +1 đến +8 (Blood Castle), Devil's Invitation +1 đến +7 (Devil Square), Scroll of Blood +1 đến +6 (Illusion Temple), Armor of Guardsman (Chaos Castle), Lost Map +7 (Kalima 7), cùng Ale.
 
 ### Công thức chế tạo Wings
 

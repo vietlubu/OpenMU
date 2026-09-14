@@ -418,52 +418,30 @@ internal partial class NpcInitialization
     {
         List<Item> itemList = new()
         {
-            this.ItemHelper.CreateItem(0, 17, 13, 1, 1), // Blood Bone + 1
-            this.ItemHelper.CreateItem(1, 17, 13, 1, 2), // Blood Bone + 2
-            this.ItemHelper.CreateItem(2, 17, 13, 1, 3), // Blood Bone + 3
-            this.ItemHelper.CreateItem(3, 17, 13, 1, 4), // Blood Bone + 4
-            this.ItemHelper.CreateItem(4, 17, 13, 1, 5), // Blood Bone + 5
-            this.ItemHelper.CreateItem(5, 17, 13, 1, 6), // Blood Bone+  6
-            this.ItemHelper.CreateItem(6, 17, 13, 1, 7), // Blood Bone + 7
-            this.ItemHelper.CreateItem(7, 17, 13, 1, 8), // Blood Bone + 8
-            this.ItemHelper.CreateItem(16, 16, 13, 1, 1), // Scroll of Archangel + 1
-            this.ItemHelper.CreateItem(17, 16, 13, 1, 2), // Scroll of Archangel + 2
-            this.ItemHelper.CreateItem(18, 16, 13, 1, 3), // Scroll of Archangel + 3
-            this.ItemHelper.CreateItem(19, 16, 13, 1, 4), // Scroll of Archangel + 4
-            this.ItemHelper.CreateItem(20, 16, 13, 1, 5), // Scroll of Archangel + 5
-            this.ItemHelper.CreateItem(21, 16, 13, 1, 6), // Scroll of Archangel + 6
-            this.ItemHelper.CreateItem(22, 16, 13, 1, 7), // Scroll of Archangel + 7
-            this.ItemHelper.CreateItem(23, 16, 13, 1, 8), // Scroll of Archangel + 8
-
-            this.ItemHelper.CreateItem(32, 17, 14, 1, 1), // Devils Eye + 1
-            this.ItemHelper.CreateItem(33, 17, 14, 1, 2), // Devils Eye + 2
-            this.ItemHelper.CreateItem(34, 17, 14, 1, 3), // Devils Eye + 3
-            this.ItemHelper.CreateItem(35, 17, 14, 1, 4), // Devils Eye + 4
-            this.ItemHelper.CreateItem(36, 17, 14, 1, 5), // Devils Eye + 5
-            this.ItemHelper.CreateItem(37, 17, 14, 1, 6), // Devils Eye + 6
-            this.ItemHelper.CreateItem(38, 17, 14, 1, 7), // Devils Eye + 7
-            this.ItemHelper.CreateItem(39, 10, 14, 1, 0), // Town Portal Scroll
-            this.ItemHelper.CreateItem(40, 18, 14, 1, 1), // Devils key + 1
-            this.ItemHelper.CreateItem(41, 18, 14, 1, 2), // Devils key + 2
-            this.ItemHelper.CreateItem(42, 18, 14, 1, 3), // Devils key + 3
-            this.ItemHelper.CreateItem(43, 18, 14, 1, 4), // Devils key + 4
-            this.ItemHelper.CreateItem(44, 18, 14, 1, 5), // Devils key + 5
-            this.ItemHelper.CreateItem(45, 18, 14, 1, 6), // Devils key + 6
-            this.ItemHelper.CreateItem(46, 18, 14, 1, 7), // Devils key + 7
-
-            this.ItemHelper.CreateItem(48, 50, 13, 1, 1), // Illusion Sorcerer Covenant
-            this.ItemHelper.CreateItem(49, 50, 13, 1, 2), // Illusion Sorcerer Covenant
-            this.ItemHelper.CreateItem(50, 50, 13, 1, 3), // Illusion Sorcerer Covenant
-            this.ItemHelper.CreateItem(51, 50, 13, 1, 4), // Illusion Sorcerer Covenant
-            this.ItemHelper.CreateItem(52, 50, 13, 1, 5), // Illusion Sorcerer Covenant
-
-            this.ItemHelper.CreateItem(53, 49, 13, 1, 1), // Old Scroll
-            this.ItemHelper.CreateItem(54, 49, 13, 1, 2), // Old Scroll
-            this.ItemHelper.CreateItem(55, 49, 13, 1, 3), // Old Scroll
-            this.ItemHelper.CreateItem(61, 49, 13, 1, 4), // Old Scroll
-            this.ItemHelper.CreateItem(62, 49, 13, 1, 5), // Old Scroll
-            this.ItemHelper.CreatePotion(64, 9, 1, 0), // Ale
-            this.ItemHelper.CreateItem(65, 29, 13, 1, 0), // Armor of Guardsman
+            this.ItemHelper.CreateItem(0, 18, 13, 1, 1), // Invisibility Cloak + 1
+            this.ItemHelper.CreateItem(1, 18, 13, 1, 2), // Invisibility Cloak + 2
+            this.ItemHelper.CreateItem(2, 18, 13, 1, 3), // Invisibility Cloak + 3
+            this.ItemHelper.CreateItem(3, 18, 13, 1, 4), // Invisibility Cloak + 4
+            this.ItemHelper.CreateItem(4, 18, 13, 1, 5), // Invisibility Cloak + 5
+            this.ItemHelper.CreateItem(5, 18, 13, 1, 6), // Invisibility Cloak + 6
+            this.ItemHelper.CreateItem(6, 18, 13, 1, 7), // Invisibility Cloak + 7
+            this.ItemHelper.CreateItem(7, 18, 13, 1, 8), // Invisibility Cloak + 8
+            this.ItemHelper.CreateItem(8, 19, 14, 1, 1), // Devil's Invitation + 1
+            this.ItemHelper.CreateItem(9, 19, 14, 1, 2), // Devil's Invitation + 2
+            this.ItemHelper.CreateItem(10, 19, 14, 1, 3), // Devil's Invitation + 3
+            this.ItemHelper.CreateItem(11, 19, 14, 1, 4), // Devil's Invitation + 4
+            this.ItemHelper.CreateItem(12, 19, 14, 1, 5), // Devil's Invitation + 5
+            this.ItemHelper.CreateItem(13, 19, 14, 1, 6), // Devil's Invitation + 6
+            this.ItemHelper.CreateItem(14, 19, 14, 1, 7), // Devil's Invitation + 7
+            this.ItemHelper.CreateItem(15, 51, 13, 1, 1), // Scroll of Blood + 1
+            this.ItemHelper.CreateItem(16, 51, 13, 1, 2), // Scroll of Blood + 2
+            this.ItemHelper.CreateItem(17, 51, 13, 1, 3), // Scroll of Blood + 3
+            this.ItemHelper.CreateItem(18, 51, 13, 1, 4), // Scroll of Blood + 4
+            this.ItemHelper.CreateItem(19, 51, 13, 1, 5), // Scroll of Blood + 5
+            this.ItemHelper.CreateItem(20, 51, 13, 1, 6), // Scroll of Blood + 6
+            this.ItemHelper.CreateItem(21, 28, 14, 1, 7), // Lost Map + 7
+            this.ItemHelper.CreatePotion(22, 9, 1, 0), // Ale
+            this.ItemHelper.CreateItem(23, 29, 13, 1, 0), // Armor of Guardsman
         };
 
         var storage = this.CreateMerchantStore(itemList);

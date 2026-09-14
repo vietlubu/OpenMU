@@ -654,4 +654,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ConfigureKalimaSevenUpdatePlugIn"/>.
     /// </summary>
     ConfigureKalimaSeven = 129,
+
+    /// <summary>
+    /// The version of the <see cref="ConfigureLumenEventTicketsUpdatePlugIn"/>.
+    /// </summary>
+    ConfigureLumenEventTickets = 130,
 }

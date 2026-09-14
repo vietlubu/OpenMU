@@ -813,6 +813,43 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests that the Lumen event-ticket update replaces her shop inventory idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestConfigureLumenEventTicketsUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var legacyComponent = context.CreateNew<Item>();
+        legacyComponent.Definition = configuration.Items.Single(item => item is { Group: 13, Number: 17 });
+        legacyComponent.Durability = 1;
+        legacyComponent.Level = 1;
+        legacyComponent.ItemSlot = 24;
+        configuration.Monsters.Single(monster => monster.Number == 255).MerchantStore!.Items.Add(legacyComponent);
+        var update = new ConfigureLumenEventTicketsUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var expectedItems = Enumerable.Range(1, 8).Select(level => ((byte)13, (short)18, (byte)level))
+            .Concat(Enumerable.Range(1, 7).Select(level => ((byte)14, (short)19, (byte)level)))
+            .Concat(Enumerable.Range(1, 6).Select(level => ((byte)13, (short)51, (byte)level)))
+            .Append(((byte)14, (short)28, (byte)7))
+            .Append(((byte)14, (short)9, (byte)0))
+            .Append(((byte)13, (short)29, (byte)0));
+        var shopItems = configuration.Monsters.Single(monster => monster.Number == 255).MerchantStore!.Items;
+        Assert.Multiple(() =>
+        {
+            Assert.That(shopItems, Has.Count.EqualTo(24));
+            Assert.That(shopItems.Select(item => (item.Definition!.Group, item.Definition.Number, item.Level)), Is.EquivalentTo(expectedItems));
+            Assert.That(shopItems.Single(item => item.Definition is { Group: 14, Number: 9 }).Durability, Is.EqualTo(1));
+        });
+    }
+
+    /// <summary>
     /// Tests that the restricted-drop update repairs existing maps, monsters, and Potion Girl stock idempotently.
     /// </summary>
     [Test]

@@ -668,6 +668,77 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests that the Illusion of Kundun 7 loot update repairs its guaranteed eighteen boxes idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestIllusionOfKundunSevenLootUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using (var context = contextProvider.CreateNewContext())
+        {
+            var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+            var kundunSeven = configuration.Monsters.Single(monster => monster.Number == 275);
+            kundunSeven.NumberOfMaximumItemDrops = 2;
+            kundunSeven.DropItemGroups.Clear();
+
+            var update = new ConfigureIllusionOfKundunSevenLootUpdatePlugIn();
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+            var drops = kundunSeven.DropItemGroups.Where(group => group.Monster == kundunSeven).ToList();
+            var kundunBox = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+            var gmGift = configuration.Items.Single(item => item is { Group: 14, Number: 52 });
+            Assert.Multiple(() =>
+            {
+                Assert.That(kundunSeven.NumberOfMaximumItemDrops, Is.EqualTo(18));
+                Assert.That(drops, Has.Count.EqualTo(18));
+                Assert.That(drops, Is.All.Matches<DropItemGroup>(group => group is { Chance: 1.0, ItemType: SpecialItemType.RandomItem }));
+                Assert.That(drops.Count(group => group is { ItemLevel: 11 } && group.PossibleItems.Single() == kundunBox), Is.EqualTo(6));
+                Assert.That(drops.Count(group => group is { ItemLevel: 12 } && group.PossibleItems.Single() == kundunBox), Is.EqualTo(6));
+                Assert.That(drops.Count(group => group is { ItemLevel: 0 } && group.PossibleItems.Single() == gmGift), Is.EqualTo(6));
+            });
+        }
+    }
+
+    /// <summary>
+    /// Tests that the GM Gift jewelry update adds one low-rate full-excellent opening idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestGmGiftJewelryUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        var update = new ConfigureGmGiftJewelryUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var gift = configuration.Items.Single(item => item is { Group: 14, Number: 52 });
+        var equipment = gift.DropItems.Single(group => group.GetId() == new Guid(0x201, 14, 52, 0, 0, 0, 0, 0, 0, 0, 0));
+        var jewelry = gift.DropItems.Single(group => group.GetId() == new Guid(0x201, 14, 52, 1, 0, 0, 0, 0, 0, 0, 0));
+        Assert.Multiple(() =>
+        {
+            Assert.That(gift.DropItems, Has.Count.EqualTo(2));
+            Assert.That(equipment.Chance, Is.EqualTo(0.99));
+            Assert.That(jewelry.ItemType, Is.EqualTo(SpecialItemType.FullExcellent));
+            Assert.That(jewelry.Chance, Is.EqualTo(0.01));
+            Assert.That(jewelry.MinimumLevel, Is.EqualTo(4));
+            Assert.That(jewelry.MaximumLevel, Is.EqualTo(4));
+            Assert.That(jewelry.PossibleItems.Select(item => (item.Group, item.Number)), Is.EquivalentTo(new[]
+            {
+                ((byte)13, (short)8), ((byte)13, (short)9), ((byte)13, (short)12), ((byte)13, (short)13),
+                ((byte)13, (short)21), ((byte)13, (short)22), ((byte)13, (short)23), ((byte)13, (short)24),
+                ((byte)13, (short)25), ((byte)13, (short)26), ((byte)13, (short)27), ((byte)13, (short)28),
+            }));
+        });
+    }
+
+    /// <summary>
     /// Tests that the restricted-drop update repairs existing maps, monsters, and Potion Girl stock idempotently.
     /// </summary>
     [Test]

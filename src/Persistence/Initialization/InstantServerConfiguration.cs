@@ -334,6 +334,100 @@ internal static class InstantServerConfiguration
         ConfigureBossDifficulty(gameConfiguration);
     }
 
+    /// <summary>
+    /// Configures guaranteed Box of Kundun and GM Gift rewards for Illusion of Kundun 7.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureIllusionOfKundunSevenDrops(IContext context, GameConfiguration gameConfiguration)
+    {
+        const short monsterNumber = 275;
+        var boss = gameConfiguration.Monsters.Single(monster => monster.Number == monsterNumber);
+        var genericBossGroups = new[]
+        {
+            GuidHelper.CreateGuid<DropItemGroup>(9_999, 4),
+            GuidHelper.CreateGuid<DropItemGroup>(9_999, 5),
+            GuidHelper.CreateGuid<DropItemGroup>(9_999, 6),
+        };
+        foreach (var group in boss.DropItemGroups.Where(group => genericBossGroups.Contains(group.GetId())).ToList())
+        {
+            boss.DropItemGroups.Remove(group);
+        }
+
+        var kundunBox = GetItemDefinition(gameConfiguration, 14, 11);
+        var gmGift = GetItemDefinition(gameConfiguration, 14, 52);
+        var drops = new[]
+        {
+            (Item: kundunBox, Level: (byte)11, Tier: 1, Name: "Box of Kundun +4"),
+            (Item: kundunBox, Level: (byte)12, Tier: 2, Name: "Box of Kundun +5"),
+            (Item: gmGift, Level: (byte)0, Tier: 3, Name: "GM Gift"),
+        };
+        const int copiesPerDrop = 6;
+        boss.NumberOfMaximumItemDrops = (byte)(drops.Length * copiesPerDrop);
+
+        foreach (var drop in drops)
+        {
+            for (var copy = 1; copy <= copiesPerDrop; copy++)
+            {
+                var id = GuidHelper.CreateGuid<DropItemGroup>(9_999, monsterNumber, (byte)((drop.Tier * 10) + copy));
+                var group = gameConfiguration.DropItemGroups.FirstOrDefault(group => group.GetId() == id);
+                if (group is null)
+                {
+                    group = context.CreateNew<DropItemGroup>();
+                    group.SetGuid(id);
+                    gameConfiguration.DropItemGroups.Add(group);
+                }
+
+                group.Description = $"Illusion of Kundun 7: {drop.Name} #{copy}";
+                group.Chance = 1.0;
+                group.ItemType = SpecialItemType.RandomItem;
+                group.ItemLevel = drop.Level;
+                group.MinimumMonsterLevel = null;
+                group.MaximumMonsterLevel = null;
+                group.Monster = boss;
+                group.PossibleItems.Clear();
+                group.PossibleItems.Add(drop.Item);
+                if (!boss.DropItemGroups.Contains(group))
+                {
+                    boss.DropItemGroups.Add(group);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds the low-rate full-excellent jewelry opening to GM Gift.
+    /// </summary>
+    /// <param name="context">The persistence context.</param>
+    /// <param name="gameConfiguration">The game configuration.</param>
+    internal static void ConfigureGmGiftJewelry(IContext context, GameConfiguration gameConfiguration)
+    {
+        var gift = GetItemDefinition(gameConfiguration, 14, 52);
+        var jewelryId = GuidHelper.CreateGuid<ItemDropItemGroup>(gift.Group, gift.Number, 1);
+        var jewelry = gift.DropItems.FirstOrDefault(group => group.GetId() == jewelryId);
+        if (jewelry is null)
+        {
+            jewelry = context.CreateNew<ItemDropItemGroup>();
+            jewelry.SetGuid(jewelryId);
+            gift.DropItems.Add(jewelry);
+        }
+
+        jewelry.SourceItemLevel = 0;
+        jewelry.ItemType = SpecialItemType.FullExcellent;
+        jewelry.Chance = 0.01;
+        jewelry.MinimumLevel = 4;
+        jewelry.MaximumLevel = 4;
+        jewelry.Description = "Full Excellent Jewelry Gacha (GM Gift)";
+        jewelry.DropEffect = ItemDropEffect.FanfareSound;
+        jewelry.PossibleItems.Clear();
+        foreach (var item in gameConfiguration.Items.Where(item => item.Group == 13 && item.Number is 8 or 9 or 12 or 13 or >= 21 and <= 28))
+        {
+            jewelry.PossibleItems.Add(item);
+        }
+
+        gift.DropItems.Single(group => group.GetId() == GuidHelper.CreateGuid<ItemDropItemGroup>(gift.Group, gift.Number, 0)).Chance = 0.99;
+    }
+
     private static void ConfigureShopEquipment(IContext context, GameConfiguration gameConfiguration)
     {
         foreach (var item in gameConfiguration.Monsters.SelectMany(monster => monster.MerchantStore?.Items ?? []))

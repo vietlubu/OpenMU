@@ -335,6 +335,8 @@ GM Gift chứa **toàn bộ vũ khí và set của Box +5**, cộng thêm các s
 - Hades.
 - Queen.
 
+GM Gift có **1%** mở ra một Ring hoặc Pendant ngẫu nhiên: Ring of Ice/Poison/Fire/Earth/Wind/Magic và Pendant of Lightning/Fire/Ice/Wind/Water/Ability. Các trang sức này cũng nhận **+4** (cấp tối đa chúng hỗ trợ), full Excellent, Luck và normal option tối đa; **99%** còn lại giữ pool vũ khí/set nêu trên.
+
 Item nhận được có:
 
 - Level **+9**.

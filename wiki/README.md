@@ -250,6 +250,19 @@ Mỗi boss hợp lệ có một lượt gacha với tổng xác suất 100%:
 
 Các boss áp dụng gồm nhóm Golden Monster, Red Dragon, White Wizard, Illusion of Kundun, Erohim, Nightmare, Maya và hai tay Maya, Dark Elf và Selupan. Hộ vệ của White Wizard không được tính là boss. Golden → Red Dragon → White Wizard chạy luân phiên, đổi event mỗi 10 phút; hãy theo thông báo trong game để tìm đúng map.
 
+### Ép Box of Kundun (Nâng cấp)
+
+Bạn có thể ghép 10 Box of Kundun cấp thấp thành 1 Box cấp cao hơn tại **Chaos Goblin** thông qua chức năng **Regular Combination** (Kết hợp bình thường). Yêu cầu thêm 1 Jewel of Chaos cho mỗi lần ép. Nếu thất bại, toàn bộ nguyên liệu sẽ biến mất.
+
+| Công thức | Yêu cầu | Tỷ lệ thành công |
+| --- | --- | ---: |
+| Box of Kundun +2 | 10 Box of Kundun +1, 1 Jewel of Chaos | 100% |
+| Box of Kundun +3 | 10 Box of Kundun +2, 1 Jewel of Chaos | 90% |
+| Box of Kundun +4 | 10 Box of Kundun +3, 1 Jewel of Chaos | 80% |
+| Box of Kundun +5 | 10 Box of Kundun +4, 1 Jewel of Chaos | 70% |
+
+> **Lưu ý quan trọng cho Admin/Người chơi:** Server sử dụng ID (MixType) từ 101 đến 104 cho các công thức này. Do đó, người chơi cần cập nhật/thêm các công thức tương ứng vào file `Data\Local\Mix.bmd` ở Client (với ID 101, 102, 103, 104) để nút "Kết hợp" không bị mờ khi bỏ đủ 10 Box vào.
+
 ## 8. Danh sách item trong từng box
 
 ### Quy tắc chung

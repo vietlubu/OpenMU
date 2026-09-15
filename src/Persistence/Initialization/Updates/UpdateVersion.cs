@@ -684,4 +684,9 @@ public enum UpdateVersion
     /// The version of the <see cref="IncreaseKalimaSevenBoxDropsUpdatePlugIn"/>.
     /// </summary>
     IncreaseKalimaSevenBoxDrops = 135,
+
+    /// <summary>
+    /// The version of the <see cref="AddKundunBoxUpgradingUpdatePlugIn"/>.
+    /// </summary>
+    AddKundunBoxUpgrading = 136,
 }

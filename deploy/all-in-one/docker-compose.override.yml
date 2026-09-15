@@ -6,8 +6,8 @@ services:
       dockerfile: Startup/Dockerfile
     restart: "no"
     ports:
-      - "8081:8080"
+      - "8082:8080"
 
   database:
     ports:
-      - "5433:5432"
+      - "5435:5432"

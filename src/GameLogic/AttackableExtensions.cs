@@ -495,16 +495,7 @@ public static class AttackableExtensions
     /// <param name="hitInfo">The hit information.</param>
     public static void ApplyAmmunitionConsumption(this IAttacker attacker, HitInfo hitInfo)
     {
-        if (!hitInfo.Attributes.HasFlag(DamageAttributes.Reflected) && attacker.Attributes[Stats.AmmunitionConsumptionRate] > 0.0)
-        {
-            // Every hit needs ammo, missed or not
-            if (attacker.Attributes[Stats.AmmunitionAmount] < attacker.Attributes[Stats.AmmunitionConsumptionRate])
-            {
-                return;
-            }
-
-            attacker.Attributes[Stats.AmmunitionAmount] -= attacker.Attributes[Stats.AmmunitionConsumptionRate];
-        }
+        // Infinity arrows: never consume ammunition.
     }
 
     /// <summary>

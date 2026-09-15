@@ -48,6 +48,16 @@ internal class ChaosMixHandlerPlugIn : IPacketHandlerPlugIn
         else
         {
             mixType = (byte)message.MixType;
+            
+            // Fallback for custom recipes that send mixType 0 (e.g. bypassed client validation)
+            if (mixType == 0)
+            {
+                var crafting = this._mixAction.FindAppropriateCraftingByItems(player);
+                if (crafting is not null)
+                {
+                    mixType = crafting.Number;
+                }
+            }
         }
 
         var socketSlot = packet.Length > 4 ? message.SocketSlot : (byte)0;

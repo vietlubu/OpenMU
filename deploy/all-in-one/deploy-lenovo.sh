@@ -2,7 +2,7 @@
 set -eu
 
 branch=${1:-test-server}
-expected_data_version=133
+expected_data_version=134
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 lan_config_dir=/home/vietlubu/.config/openmu
 compose_dir="$repo_root/deploy/all-in-one"

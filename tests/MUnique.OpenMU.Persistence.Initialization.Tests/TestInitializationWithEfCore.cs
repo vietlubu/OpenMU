@@ -958,6 +958,62 @@ internal class TestInitializationWithEfCore
     }
 
     /// <summary>
+    /// Tests that the follow-up Kalima 7 strength reduction is idempotent and leaves Kundun unchanged.
+    /// </summary>
+    [Test]
+    public async Task TestReduceKalimaSevenRegularMonsterStrengthUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        await new RestrictInstantServerDropsUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new ConfigureKalimaSevenRegularDropsUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new ConfigureKalimaSevenUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new IncreaseKalimaSevenDifficultyUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new RetuneKalimaSevenRegularMonstersUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        var update = new ReduceKalimaSevenRegularMonsterStrengthUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        foreach (var expected in new (short Number, float Health, float MinimumDamage, float MaximumDamage, float Defense, float AttackRate, float DefenseRate)[]
+        {
+            (331, 820_000, 71_200, 75_200, 5_840, 18_700, 6_930),
+            (332, 880_000, 75_100, 79_100, 6_150, 19_360, 7_260),
+            (333, 973_000, 80_500, 84_500, 6_600, 20_240, 7_590),
+            (334, 1_100_000, 87_000, 91_500, 7_200, 21_120, 8_140),
+            (335, 1_250_000, 95_100, 99_600, 7_830, 22_330, 8_910),
+            (336, 1_450_000, 104_000, 108_500, 8_650, 23_760, 9_680),
+            (337, 1_700_000, 116_800, 121_300, 9_920, 26_180, 10_670),
+        })
+        {
+            var monster = configuration.Monsters.Single(monster => monster.Number == expected.Number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(monster[Stats.MaximumHealth], Is.EqualTo(expected.Health * 1.47f));
+                Assert.That(monster[Stats.MinimumPhysBaseDmg], Is.EqualTo(expected.MinimumDamage * 1.47f));
+                Assert.That(monster[Stats.MaximumPhysBaseDmg], Is.EqualTo(expected.MaximumDamage * 1.47f));
+                Assert.That(monster[Stats.DefenseBase], Is.EqualTo(expected.Defense * 1.47f));
+                Assert.That(monster[Stats.AttackRatePvm], Is.EqualTo(expected.AttackRate * 1.47f));
+                Assert.That(monster[Stats.DefenseRatePvm], Is.EqualTo(expected.DefenseRate * 1.47f));
+            });
+        }
+
+        var boss = configuration.Monsters.Single(monster => monster.Number == 275);
+        Assert.Multiple(() =>
+        {
+            Assert.That(boss[Stats.MaximumHealth], Is.EqualTo(120_000_000));
+            Assert.That(boss[Stats.MinimumPhysBaseDmg], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.MaximumPhysBaseDmg], Is.EqualTo(72_000));
+            Assert.That(boss[Stats.DefenseBase], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.AttackRatePvm], Is.EqualTo(60_000));
+            Assert.That(boss[Stats.DefenseRatePvm], Is.EqualTo(48_000));
+        });
+    }
+
+    /// <summary>
     /// Tests that the Lumen event-ticket update replaces her shop inventory idempotently.
     /// </summary>
     [Test]

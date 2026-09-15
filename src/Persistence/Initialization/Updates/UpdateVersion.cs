@@ -694,4 +694,9 @@ public enum UpdateVersion
     /// The version of the <see cref="AddJewelDropsToIcarusAndKalima7UpdatePlugIn"/>.
     /// </summary>
     AddJewelDropsToIcarusAndKalima7 = 137,
+
+    /// <summary>
+    /// The version of the <see cref="FixKundunBoxUpgradingUpdatePlugIn"/>.
+    /// </summary>
+    FixKundunBoxUpgrading = 138,
 }

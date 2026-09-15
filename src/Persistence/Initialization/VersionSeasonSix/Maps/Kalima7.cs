@@ -53,6 +53,15 @@ internal class Kalima7 : KalimaBase
         gemstoneGroup.PossibleItems.Add(gemstone);
         this.MapDefinition!.DropItemGroups.Add(gemstoneGroup);
         this.GameConfiguration.DropItemGroups.Add(gemstoneGroup);
+
+        var jog = this.GameConfiguration.Items.First(item => item.Group == 14 && item.Number == 31);
+        var jogGroup = this.Context.CreateNew<DropItemGroup>();
+        jogGroup.SetGuid(this.MapNumber, 2);
+        jogGroup.Chance = 0.10;
+        jogGroup.Description = "Jewel of Guardian";
+        jogGroup.PossibleItems.Add(jog);
+        this.MapDefinition!.DropItemGroups.Add(jogGroup);
+        this.GameConfiguration.DropItemGroups.Add(jogGroup);
     }
 
     /// <inheritdoc/>

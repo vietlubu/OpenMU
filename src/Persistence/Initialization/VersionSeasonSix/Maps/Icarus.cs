@@ -54,5 +54,14 @@ internal class Icarus : Version095d.Maps.Icarus
         gemstoneGroup.PossibleItems.Add(gemstone);
         this.MapDefinition.DropItemGroups.Add(gemstoneGroup);
         this.GameConfiguration.DropItemGroups.Add(gemstoneGroup);
+
+        var jog = this.GameConfiguration.Items.First(item => item.Group == 14 && item.Number == 31);
+        var jogGroup = this.Context.CreateNew<DropItemGroup>();
+        jogGroup.SetGuid(this.MapNumber, 4);
+        jogGroup.Chance = 0.03;
+        jogGroup.Description = "Jewel of Guardian";
+        jogGroup.PossibleItems.Add(jog);
+        this.MapDefinition.DropItemGroups.Add(jogGroup);
+        this.GameConfiguration.DropItemGroups.Add(jogGroup);
     }
 }

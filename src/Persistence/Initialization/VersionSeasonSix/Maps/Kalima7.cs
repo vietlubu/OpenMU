@@ -41,6 +41,21 @@ internal class Kalima7 : KalimaBase
     protected override string MapName => Name;
 
     /// <inheritdoc/>
+    protected override void InitializeDropItemGroups()
+    {
+        base.InitializeDropItemGroups();
+
+        var gemstone = this.GameConfiguration.Items.First(item => item.Group == 14 && item.Number == 41);
+        var gemstoneGroup = this.Context.CreateNew<DropItemGroup>();
+        gemstoneGroup.SetGuid(this.MapNumber, 1);
+        gemstoneGroup.Chance = 0.30;
+        gemstoneGroup.Description = "Gemstone";
+        gemstoneGroup.PossibleItems.Add(gemstone);
+        this.MapDefinition!.DropItemGroups.Add(gemstoneGroup);
+        this.GameConfiguration.DropItemGroups.Add(gemstoneGroup);
+    }
+
+    /// <inheritdoc/>
     protected override IEnumerable<MonsterSpawnArea> CreateMonsterSpawns()
     {
         yield return this.CreateMonsterSpawn(100, this.NpcDictionary[334], 120, 050); // Death Angel 7
@@ -352,7 +367,7 @@ internal class Kalima7 : KalimaBase
             monster.AttackDelay = new TimeSpan(1700 * TimeSpan.TicksPerMillisecond);
             monster.RespawnDelay = new TimeSpan(10800 * TimeSpan.TicksPerSecond);
             monster.Attribute = 2;
-            monster.NumberOfMaximumItemDrops = 1;
+            monster.NumberOfMaximumItemDrops = 6;
             monster.AttackSkill = this.GameConfiguration.Skills.FirstOrDefault(s => s.Number == (short)SkillNumber.MonsterSkill);
             var attributes = new Dictionary<AttributeDefinition, float>
             {
@@ -371,6 +386,18 @@ internal class Kalima7 : KalimaBase
 
             monster.AddAttributes(attributes, this.Context, this.GameConfiguration);
             monster.SetGuid(monster.Number);
+
+            var harmony = this.GameConfiguration.Items.First(i => i.Group == 14 && i.Number == 42);
+            for (short i = 0; i < 5; i++)
+            {
+                var harmonyDrop = this.Context.CreateNew<DropItemGroup>();
+                harmonyDrop.SetGuid(monster.Number, (short)(10 + i));
+                harmonyDrop.Chance = 1.0;
+                harmonyDrop.Description = $"Jewel of Harmony (Kalima 7 Boss Drop) {i + 1}/5";
+                harmonyDrop.PossibleItems.Add(harmony);
+                monster.DropItemGroups.Add(harmonyDrop);
+                this.GameConfiguration.DropItemGroups.Add(harmonyDrop);
+            }
         }
     }
 }

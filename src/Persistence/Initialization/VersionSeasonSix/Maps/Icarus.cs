@@ -45,5 +45,14 @@ internal class Icarus : Version095d.Maps.Icarus
         crest.PossibleItems.Add(lochsFeather);
         this.MapDefinition.DropItemGroups.Add(crest);
         this.GameConfiguration.DropItemGroups.Add(crest);
+
+        var gemstone = this.GameConfiguration.Items.First(item => item.Group == 14 && item.Number == 41);
+        var gemstoneGroup = this.Context.CreateNew<DropItemGroup>();
+        gemstoneGroup.SetGuid(this.MapNumber, 3);
+        gemstoneGroup.Chance = 0.03;
+        gemstoneGroup.Description = "Gemstone";
+        gemstoneGroup.PossibleItems.Add(gemstone);
+        this.MapDefinition.DropItemGroups.Add(gemstoneGroup);
+        this.GameConfiguration.DropItemGroups.Add(gemstoneGroup);
     }
 }

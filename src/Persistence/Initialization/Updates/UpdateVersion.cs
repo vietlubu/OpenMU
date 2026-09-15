@@ -679,4 +679,9 @@ public enum UpdateVersion
     /// The version of the <see cref="ReduceKalimaSevenRegularMonsterStrengthUpdatePlugIn"/>.
     /// </summary>
     ReduceKalimaSevenRegularMonsterStrength = 134,
+
+    /// <summary>
+    /// The version of the <see cref="IncreaseKalimaSevenBoxDropsUpdatePlugIn"/>.
+    /// </summary>
+    IncreaseKalimaSevenBoxDrops = 135,
 }

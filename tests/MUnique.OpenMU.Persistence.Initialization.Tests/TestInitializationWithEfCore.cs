@@ -1013,6 +1013,46 @@ internal class TestInitializationWithEfCore
         });
     }
 
+
+    /// <summary>
+    /// Tests that the follow-up Kalima 7 box drops update raises Box +4 chance and adds Box +5 idempotently.
+    /// </summary>
+    [Test]
+    public async Task TestIncreaseKalimaSevenBoxDropsUpdatePlugInAsync()
+    {
+        var contextProvider = new InMemoryPersistenceContextProvider();
+        var dataInitialization = new VersionSeasonSix.DataInitialization(contextProvider, new NullLoggerFactory());
+        await dataInitialization.CreateInitialDataAsync(1, false).ConfigureAwait(false);
+
+        using var context = contextProvider.CreateNewContext();
+        var configuration = (await context.GetAsync<GameConfiguration>().ConfigureAwait(false)).Single();
+        await new ConfigureKalimaSevenUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new IncreaseKalimaSevenDifficultyUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new RestrictInstantServerDropsUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new ConfigureKalimaSevenRegularDropsUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new RetuneKalimaSevenRegularMonstersUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await new ReduceKalimaSevenRegularMonsterStrengthUpdatePlugIn().ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        var update = new IncreaseKalimaSevenBoxDropsUpdatePlugIn();
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+        await update.ApplyUpdateAsync(context, configuration).ConfigureAwait(false);
+
+        var boxOfKundun = configuration.Items.Single(item => item is { Group: 14, Number: 11 });
+        var regularNumbers = new HashSet<short> { 331, 332, 333, 334, 335, 336, 337 };
+        var regularMonsters = configuration.Monsters.Where(monster => regularNumbers.Contains(monster.Number)).ToList();
+
+        var boxFourGroup = configuration.DropItemGroups.Single(group => group.ItemLevel == 11 && group.Chance == 0.5);
+        var boxFiveGroup = configuration.DropItemGroups.Single(group => group.ItemLevel == 12 && group.Chance == 0.4);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(boxFourGroup.Chance, Is.EqualTo(0.5));
+            Assert.That(boxFiveGroup.Chance, Is.EqualTo(0.4));
+            Assert.That(boxFiveGroup.ItemLevel, Is.EqualTo(12));
+            Assert.That(boxFiveGroup.PossibleItems.Single(), Is.EqualTo(boxOfKundun));
+            Assert.That(regularMonsters, Has.All.Matches<MonsterDefinition>(monster => monster.DropItemGroups.Contains(boxFourGroup) && monster.DropItemGroups.Contains(boxFiveGroup)));
+        });
+    }
+
     /// <summary>
     /// Tests that the Lumen event-ticket update replaces her shop inventory idempotently.
     /// </summary>
